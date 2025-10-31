@@ -5,13 +5,17 @@
 /* base reset */
 :root {
   --bg-dark: #020617;
-  --bg-soft: rgba(2,6,23,0.4);
+  --bg-soft: rgba(2, 6, 23, 0.4);
   --radius: 1.5rem;
 }
 
 body {
-  @apply bg-slate-950 text-slate-100 min-h-screen;
+  @apply min-h-screen bg-slate-100 text-slate-900 transition-colors duration-500 ease-out;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.dark body {
+  @apply bg-slate-950 text-slate-100;
 }
 
 .glass-dark {
@@ -32,6 +36,21 @@ body {
 
 .badge {
   @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+}
+
+@keyframes modal-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(16px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-modal-pop {
+  animation: modal-pop 0.35s ease-out both;
 }
 
 @media (min-width: 1024px) {

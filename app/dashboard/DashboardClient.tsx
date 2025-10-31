@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type SVGProps } from "react";
+import { useEffect, useMemo, useState, type SVGProps } from "react";
 import { createClient } from "@/lib/supabaseClient";
 
 type ApplicationStatus =
@@ -54,8 +54,6 @@ const STATUS_DETAILS: Array<{
   { value: "hired", label: "Hired", description: "Selamat 🎉" },
 ];
 
-const STATUS_ORDER: ApplicationStatus[] = STATUS_DETAILS.map((detail) => detail.value);
-
 const SOURCE_DETAILS: Array<{ value: ApplicationSource; label: string }> = [
   { value: "linkedin", label: "LinkedIn" },
   { value: "email", label: "Email" },
@@ -66,7 +64,8 @@ const SOURCE_DETAILS: Array<{ value: ApplicationSource; label: string }> = [
   { value: "lainnya", label: "Lainnya" },
 ];
 
-const SOURCE_ORDER: ApplicationSource[] = SOURCE_DETAILS.map((detail) => detail.value);
+const STATUS_ORDER = STATUS_DETAILS.map((item) => item.value);
+const SOURCE_ORDER = SOURCE_DETAILS.map((item) => item.value);
 
 const STATUS_LABEL_MAP: Record<ApplicationStatus, string> = STATUS_DETAILS.reduce(
   (acc, detail) => ({ ...acc, [detail.value]: detail.label }),
@@ -78,24 +77,14 @@ const SOURCE_LABEL_MAP: Record<ApplicationSource, string> = SOURCE_DETAILS.reduc
   {} as Record<ApplicationSource, string>
 );
 
-function toStatus(value: string | null | undefined): ApplicationStatus {
-  const normalized = (value ?? "waiting").toLowerCase().replace(/\s+/g, "-") as ApplicationStatus;
-  return STATUS_ORDER.includes(normalized) ? normalized : "waiting";
+function normalizeStatus(value: string | null | undefined): ApplicationStatus {
+  const slug = (value ?? "waiting").toLowerCase().replace(/\s+/g, "-") as ApplicationStatus;
+  return STATUS_ORDER.includes(slug) ? slug : "waiting";
 }
 
-function toSource(value: string | null | undefined): ApplicationSource {
-  const normalized = (value ?? "lainnya").toLowerCase().replace(/\s+/g, "-") as ApplicationSource;
-  return SOURCE_ORDER.includes(normalized) ? normalized : "lainnya";
-}
-
-function getStatusLabel(value: string) {
-  const key = toStatus(value);
-  return STATUS_LABEL_MAP[key] ?? value;
-}
-
-function getSourceLabel(value: string) {
-  const key = toSource(value);
-  return SOURCE_LABEL_MAP[key] ?? value;
+function normalizeSource(value: string | null | undefined): ApplicationSource {
+  const slug = (value ?? "lainnya").toLowerCase().replace(/\s+/g, "-") as ApplicationSource;
+  return SOURCE_ORDER.includes(slug) ? slug : "lainnya";
 }
 
 export default function DashboardClient() {
@@ -106,21 +95,14 @@ export default function DashboardClient() {
   const [isDark, setIsDark] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [loadingCreate, setLoadingCreate] = useState(false);
-  const [errorCreate, setErrorCreate] = useState("");
-  const [form, setForm] = useState<{
-    company: string;
-    position: string;
-    applied_at: string;
-    status: ApplicationStatus;
-    source: ApplicationSource;
-    notes: string;
-  }>({
+  const [loadingMutation, setLoadingMutation] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [form, setForm] = useState({
     company: "",
     position: "",
     applied_at: new Date().toISOString().slice(0, 10),
-    status: "waiting",
-    source: "linkedin",
+    status: "waiting" as ApplicationStatus,
+    source: "linkedin" as ApplicationSource,
     notes: "",
   });
 
@@ -129,7 +111,7 @@ export default function DashboardClient() {
   }, [isDark]);
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchApplications = async () => {
       const { data: authData, error: authError } = await supabase.auth.getUser();
       if (authError || !authData?.user) {
         window.location.href = "/auth";
@@ -144,52 +126,78 @@ export default function DashboardClient() {
         .order("applied_at", { ascending: false });
 
       if (!error && data) {
-        setApplications(data as Application[]);
+        setApplications(
+          (data as Application[]).map((item) => ({
+            ...item,
+            status: normalizeStatus(item.status),
+            source: normalizeSource(item.source),
+          }))
+        );
       }
     };
 
-    fetchData();
-  }, []);
+    fetchApplications();
+  }, [supabase]);
 
-  const filteredApplications =
-    filteredStatus === "all"
-      ? applications
-      : applications.filter((a) => toStatus(a.status) === filteredStatus);
+  const filteredApplications = useMemo(() => {
+    if (filteredStatus === "all") return applications;
+    return applications.filter((item) => normalizeStatus(item.status) === filteredStatus);
+  }, [applications, filteredStatus]);
 
-  const countsByStatus: Record<ApplicationStatus, number> = STATUS_ORDER.reduce(
-    (acc, status) => ({ ...acc, [status]: 0 }),
-    {} as Record<ApplicationStatus, number>
-  );
+  const countsByStatus = useMemo(() => {
+    const result: Record<ApplicationStatus, number> = STATUS_ORDER.reduce(
+      (acc, status) => ({ ...acc, [status]: 0 }),
+      {} as Record<ApplicationStatus, number>
+    );
+    for (const app of applications) {
+      const status = normalizeStatus(app.status);
+      result[status] += 1;
+    }
+    return result;
+  }, [applications]);
 
-  const countsBySource: Record<ApplicationSource, number> = SOURCE_ORDER.reduce(
-    (acc, source) => ({ ...acc, [source]: 0 }),
-    {} as Record<ApplicationSource, number>
-  );
+  const countsBySource = useMemo(() => {
+    const result: Record<ApplicationSource, number> = SOURCE_ORDER.reduce(
+      (acc, source) => ({ ...acc, [source]: 0 }),
+      {} as Record<ApplicationSource, number>
+    );
+    for (const app of applications) {
+      const source = normalizeSource(app.source);
+      result[source] += 1;
+    }
+    return result;
+  }, [applications]);
 
-  for (const app of applications) {
-    const statusSlug = (app.status || "waiting")
-      .toLowerCase()
-      .replace(/\s+/g, "-") as ApplicationStatus;
-    const normalizedStatus = STATUS_ORDER.includes(statusSlug)
-      ? statusSlug
-      : ("waiting" as ApplicationStatus);
-    countsByStatus[normalizedStatus] += 1;
+  const themeAwareCard = isDark
+    ? "bg-slate-900/50 border border-slate-700/50 text-slate-100 shadow-[0_28px_60px_rgba(2,6,23,0.55)]"
+    : "bg-white/90 border border-slate-200 text-slate-900 shadow-[0_24px_55px_rgba(148,163,184,0.35)]";
 
-    const sourceSlug = (app.source || "lainnya")
-      .toLowerCase()
-      .replace(/\s+/g, "-") as ApplicationSource;
-    const normalizedSource = SOURCE_ORDER.includes(sourceSlug)
-      ? sourceSlug
-      : ("lainnya" as ApplicationSource);
-    countsBySource[normalizedSource] += 1;
-  }
+  const themeAwareSourceCard = isDark
+    ? "bg-slate-900/45 border border-slate-700/50 text-slate-100 shadow-[0_20px_45px_rgba(15,23,42,0.45)]"
+    : "bg-white/95 border border-slate-200 text-slate-900 shadow-[0_20px_40px_rgba(148,163,184,0.3)]";
+
+  const inputClass = `${
+    isDark
+      ? "border-slate-600/60 bg-transparent text-slate-100 placeholder:text-slate-400"
+      : "border-slate-300 bg-white/90 text-slate-900 placeholder:text-slate-500"
+  } w-full rounded-2xl border px-4 py-2 text-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70 hover:-translate-y-0.5 hover:shadow-[0_14px_32px_rgba(99,102,241,0.2)]`;
+
+  const selectClass = `${
+    isDark
+      ? "border-slate-600/60 bg-slate-950/60 text-slate-100"
+      : "border-slate-300 bg-white text-slate-900"
+  } w-full rounded-2xl border px-4 py-2 text-sm appearance-none transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70 hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(99,102,241,0.28)]`;
+
+  const textareaClass = `${inputClass} min-h-[110px] resize-none`;
+
+  const helperTextClass = isDark ? "text-xs text-slate-400" : "text-xs text-slate-600";
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     window.location.href = "/auth";
   };
 
-  const openModal = () => {
+  const resetForm = () => {
     setForm({
       company: "",
       position: "",
@@ -199,13 +207,12 @@ export default function DashboardClient() {
       notes: "",
     });
     setEditingId(null);
-    setErrorCreate("");
-    setIsModalOpen(true);
+    setErrorMessage("");
   };
 
-  const closeModal = () => {
-    setEditingId(null);
-    setIsModalOpen(false);
+  const openCreate = () => {
+    resetForm();
+    setIsModalOpen(true);
   };
 
   const openEdit = (application: Application) => {
@@ -214,22 +221,44 @@ export default function DashboardClient() {
       company: application.company,
       position: application.position,
       applied_at: application.applied_at,
-      status: toStatus(application.status),
-      source: toSource(application.source),
+      status: normalizeStatus(application.status),
+      source: normalizeSource(application.source),
       notes: application.notes ?? "",
     });
-    setErrorCreate("");
+    setErrorMessage("");
     setIsModalOpen(true);
   };
 
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const refreshApplications = async (userId: string) => {
+    const { data } = await supabase
+      .from("applications")
+      .select("*")
+      .eq("user_id", userId)
+      .order("applied_at", { ascending: false });
+
+    if (data) {
+      setApplications(
+        (data as Application[]).map((item) => ({
+          ...item,
+          status: normalizeStatus(item.status),
+          source: normalizeSource(item.source),
+        }))
+      );
+    }
+  };
+
   const handleSave = async () => {
-    setLoadingCreate(true);
-    setErrorCreate("");
+    setLoadingMutation(true);
+    setErrorMessage("");
 
     const { data: authData, error: authError } = await supabase.auth.getUser();
     if (authError || !authData?.user) {
-      setErrorCreate("Session habis, silakan login ulang.");
-      setLoadingCreate(false);
+      setErrorMessage("Sesi berakhir, silakan login kembali.");
+      setLoadingMutation(false);
       return;
     }
 
@@ -243,40 +272,23 @@ export default function DashboardClient() {
       notes: form.notes.trim() || null,
     };
 
-    let requestError: Error | null = null;
+    const mutation = editingId
+      ? supabase.from("applications").update(payload).eq("id", editingId).eq("user_id", authData.user.id)
+      : supabase.from("applications").insert(payload);
 
-    if (editingId) {
-      const { error } = await supabase
-        .from("applications")
-        .update(payload)
-        .eq("id", editingId)
-        .eq("user_id", authData.user.id);
-      requestError = error as Error | null;
-    } else {
-      const { error } = await supabase.from("applications").insert(payload);
-      requestError = error as Error | null;
-    }
-
-    if (requestError) {
-      console.error("mutation error", requestError);
-      setErrorCreate(requestError.message);
-      setLoadingCreate(false);
+    const { error } = await mutation;
+    if (error) {
+      console.error("mutation error", error);
+      setErrorMessage(error.message);
+      setLoadingMutation(false);
       return;
     }
 
-    const { data: newData } = await supabase
-      .from("applications")
-      .select("*")
-      .eq("user_id", authData.user.id)
-      .order("applied_at", { ascending: false });
+    await refreshApplications(authData.user.id);
 
-    if (newData) {
-      setApplications(newData as Application[]);
-    }
-
-    setLoadingCreate(false);
-    setEditingId(null);
+    setLoadingMutation(false);
     setIsModalOpen(false);
+    setEditingId(null);
   };
 
   const handleDelete = async (id: string) => {
@@ -284,194 +296,258 @@ export default function DashboardClient() {
     if (!authData?.user) return;
 
     await supabase.from("applications").delete().eq("id", id).eq("user_id", authData.user.id);
-
-    const { data: newData } = await supabase
-      .from("applications")
-      .select("*")
-      .eq("user_id", authData.user.id)
-      .order("applied_at", { ascending: false });
-
-    if (newData) {
-      setApplications(newData as Application[]);
-    }
+    await refreshApplications(authData.user.id);
   };
 
-  const exportToExcel = async () => {
+  const exportToCsv = async () => {
     if (applications.length === 0) return;
-    const rows = applications.map((a) => ({
-      Company: a.company,
-      Position: a.position,
-      AppliedAt: a.applied_at,
-      Status: getStatusLabel(a.status),
-      Source: getSourceLabel(a.source),
-      Notes: a.notes || "",
+
+    const rows = applications.map((app) => ({
+      Company: app.company,
+      Position: app.position,
+      AppliedAt: app.applied_at,
+      Status: STATUS_LABEL_MAP[normalizeStatus(app.status)],
+      Source: SOURCE_LABEL_MAP[normalizeSource(app.source)],
+      Notes: app.notes?.replace(/\r?\n/g, " ") ?? "",
     }));
 
-    const csvHeader = "Company,Position,AppliedAt,Status,Source,Notes\n";
-    const csvRows = rows
-      .map((r) =>
-        [
-          r.Company,
-          r.Position,
-          r.AppliedAt,
-          r.Status,
-          r.Source,
-          r.Notes.replace(/,/g, ";"),
-        ].join(",")
-      )
-      .join("\n");
-    const csv = csvHeader + csvRows;
+    const header = "Company,Position,AppliedAt,Status,Source,Notes\n";
+    const csv =
+      header +
+      rows
+        .map((row) =>
+          [row.Company, row.Position, row.AppliedAt, row.Status, row.Source, row.Notes.replace(/,/g, ";")].join(",")
+        )
+        .join("\n");
+
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "jobtrackr-export.csv";
-    a.click();
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "jobtrackr-export.csv";
+    anchor.click();
     URL.revokeObjectURL(url);
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-50 pb-10">
-      {/* top bar */}
-      <header className="sticky top-0 z-20 flex items-center justify-between gap-4 px-4 py-4 bg-slate-950/60 backdrop-blur border-b border-slate-800">
-        <h1 className="text-2xl md:text-3xl font-bold truncate">
-          Hi, {userEmail || "Guest"}
-        </h1>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsDark((v) => !v)}
-            className="w-10 h-10 rounded-full bg-slate-900/60 border border-slate-700 flex items-center justify-center shadow-[0_0_20px_rgba(15,23,42,0.5)]"
-          >
-            {isDark ? <SunIcon className="w-5 h-5 text-yellow-300" /> : <MoonIcon className="w-5 h-5 text-slate-200" />}
-          </button>
-          <button
-            onClick={exportToExcel}
-            className="hidden sm:inline-flex items-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/30 hover:brightness-110 transition"
-          >
-            <DownloadIcon className="w-4 h-4" />
-            Export to Excel
-          </button>
-          <button
-            onClick={openModal}
-            className="hidden sm:inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 px-4 py-2 text-sm font-semibold shadow-lg shadow-indigo-500/40 hover:brightness-110 transition"
-          >
-            <PlusIcon className="w-4 h-4" />
-            Add Application
-          </button>
-          <button
-            onClick={handleLogout}
-            className="rounded-2xl border border-slate-600 px-4 py-2 text-sm font-medium hover:bg-slate-800 transition"
-          >
-            Logout
-          </button>
+    <div
+      className={`min-h-screen pb-14 transition-colors duration-700 ease-out ${
+        isDark ? "bg-slate-950 text-slate-50" : "bg-slate-100 text-slate-900"
+      }`}
+    >
+      <header
+        className={`sticky top-0 z-40 border-b backdrop-blur-xl transition-all duration-500 ${
+          isDark
+            ? "bg-slate-950/85 border-slate-800 shadow-[0_18px_55px_rgba(2,6,23,0.55)]"
+            : "bg-white/85 border-slate-200 shadow-[0_18px_45px_rgba(148,163,184,0.35)]"
+        }`}
+      >
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-2xl font-bold md:text-3xl" aria-live="polite">
+              Hi, {userEmail || "Guest"}
+            </h1>
+            <p className={`text-xs transition-colors ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+              Pantau semua lamaran kerja kamu dalam satu dashboard.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center justify-end gap-3">
+            <button
+              onClick={() => setIsDark((prev) => !prev)}
+              className={`relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_20px_40px_rgba(99,102,241,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${
+                isDark
+                  ? "border-slate-700/60 bg-slate-900/70 text-yellow-200"
+                  : "border-slate-300 bg-white text-slate-700"
+              }`}
+              aria-label="Toggle theme"
+            >
+              <span
+                className={`absolute inset-0 transition-opacity duration-500 ${isDark ? "opacity-0" : "opacity-100"}`}
+              >
+                <SunIcon className="h-full w-full" />
+              </span>
+              <span
+                className={`absolute inset-0 transition-opacity duration-500 ${isDark ? "opacity-100" : "opacity-0"}`}
+              >
+                <MoonIcon className="h-full w-full" />
+              </span>
+            </button>
+            <button
+              onClick={exportToCsv}
+              className={`hidden items-center gap-2 rounded-3xl px-4 py-2 text-sm font-semibold transition-all duration-300 sm:flex hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/70 ${
+                isDark
+                  ? "bg-emerald-500 text-slate-950 shadow-[0_20px_40px_rgba(16,185,129,0.35)]"
+                  : "bg-emerald-400 text-slate-900 shadow-[0_20px_40px_rgba(74,222,128,0.35)]"
+              }`}
+            >
+              <DownloadIcon className="h-4 w-4" />
+              Export to Excel
+            </button>
+            <button
+              onClick={openCreate}
+              className={`hidden items-center gap-2 rounded-3xl px-4 py-2 text-sm font-semibold transition-all duration-300 sm:flex hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${
+                isDark
+                  ? "bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-purple-500 text-white shadow-[0_22px_48px_rgba(129,140,248,0.45)]"
+                  : "bg-gradient-to-r from-indigo-400 via-fuchsia-400 to-purple-400 text-white shadow-[0_22px_48px_rgba(129,140,248,0.35)]"
+              }`}
+            >
+              <PlusIcon className="h-4 w-4" />
+              Add Application
+            </button>
+            <button
+              onClick={handleLogout}
+              className={`rounded-3xl px-4 py-2 text-sm font-semibold transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/70 ${
+                isDark
+                  ? "border border-slate-600/60 bg-slate-900/60 text-slate-100 hover:bg-slate-800/70 hover:shadow-[0_18px_38px_rgba(2,6,23,0.55)]"
+                  : "border border-slate-300 bg-white text-slate-800 hover:bg-slate-200/70 hover:shadow-[0_14px_28px_rgba(148,163,184,0.25)]"
+              }`}
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* mobile actions */}
-      <div className="sm:hidden px-4 mt-4 flex gap-3">
+      <div className="mx-auto mt-4 flex gap-3 px-4 sm:hidden">
         <button
-          onClick={exportToExcel}
-          className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-slate-950 shadow-lg shadow-emerald-500/30"
+          onClick={exportToCsv}
+          className={`flex-1 inline-flex items-center justify-center gap-2 rounded-3xl px-4 py-2 text-sm font-semibold transition-all duration-300 hover:-translate-y-0.5 ${
+            isDark
+              ? "bg-emerald-500 text-slate-950 shadow-[0_20px_40px_rgba(16,185,129,0.35)]"
+              : "bg-emerald-400 text-slate-900 shadow-[0_20px_40px_rgba(74,222,128,0.35)]"
+          }`}
         >
-          <DownloadIcon className="w-4 h-4" />
+          <DownloadIcon className="h-4 w-4" />
           Export
         </button>
         <button
-          onClick={openModal}
-          className="flex-1 inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 px-4 py-2 text-sm font-semibold shadow-lg shadow-indigo-500/40"
+          onClick={openCreate}
+          className={`flex-1 inline-flex items-center justify-center gap-2 rounded-3xl px-4 py-2 text-sm font-semibold transition-all duration-300 hover:-translate-y-0.5 ${
+            isDark
+              ? "bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-purple-500 text-white shadow-[0_22px_48px_rgba(129,140,248,0.45)]"
+              : "bg-gradient-to-r from-indigo-400 via-fuchsia-400 to-purple-400 text-white shadow-[0_22px_48px_rgba(129,140,248,0.35)]"
+          }`}
         >
-          <PlusIcon className="w-4 h-4" />
+          <PlusIcon className="h-4 w-4" />
           Add
         </button>
       </div>
 
-      {/* analytics */}
-      <main className="px-4 mt-6 space-y-6">
-        <div className="grid md:grid-cols-4 gap-4">
+      <main className="mx-auto mt-8 space-y-8 px-4 max-w-6xl">
+        <section className="grid gap-4 md:grid-cols-3 xl:grid-cols-4">
           {STATUS_DETAILS.map(({ value, label, description }) => (
-            <div
+            <article
               key={value}
-              className="rounded-3xl bg-slate-900/40 border border-slate-700/40 p-4 shadow-[0_0_50px_rgba(15,23,42,0.25)]"
+              className={`${themeAwareCard} group relative overflow-hidden rounded-4xl p-5 transition-all duration-500 hover:-translate-y-1`}
               role="status"
               aria-live="polite"
             >
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
-              <p className="text-4xl font-bold mt-1">{countsByStatus[value]}</p>
-              <p className="text-sm text-slate-300 mt-1">{description}</p>
-            </div>
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-indigo-500/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+              <p className={`text-xs font-semibold uppercase tracking-wide ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                {label}
+              </p>
+              <p className="mt-2 text-4xl font-bold">{countsByStatus[value]}</p>
+              <p className={`mt-2 text-sm transition-colors ${isDark ? "text-slate-300" : "text-slate-600"}`}>{description}</p>
+            </article>
           ))}
-        </div>
+        </section>
 
-        <div className="grid md:grid-cols-4 gap-4">
+        <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {SOURCE_DETAILS.map(({ value, label }) => (
-            <div
+            <article
               key={value}
-              className="rounded-3xl bg-slate-900/40 border border-slate-700/40 p-4 flex items-center justify-between shadow-[0_0_40px_rgba(15,23,42,0.2)]"
-              role="status"
+              className={`${themeAwareSourceCard} group relative overflow-hidden rounded-3xl p-4 transition-all duration-500 hover:-translate-y-1`}
             >
-              <div>
-                <p className="text-sm text-slate-100">{label}</p>
-              </div>
-              <p className="text-2xl font-bold text-slate-50">{countsBySource[value]}</p>
-            </div>
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent to-emerald-400/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+              <p className={`text-xs font-semibold uppercase tracking-wide ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                {label}
+              </p>
+              <p className={`mt-2 text-3xl font-bold ${isDark ? "text-slate-50" : "text-slate-900"}`}>{countsBySource[value]}</p>
+            </article>
           ))}
-        </div>
+        </section>
 
-        {/* filter pills */}
-        <div className="flex gap-3 overflow-x-auto pb-1">
-          <FilterPill
-            label="All"
-            active={filteredStatus === "all"}
-            onClick={() => setFilteredStatus("all")}
-          />
+        <section className="flex gap-3 overflow-x-auto pb-1" aria-label="Filter status">
+          <FilterPill label="All" active={filteredStatus === "all"} onClick={() => setFilteredStatus("all")} isDark={isDark} />
           {STATUS_DETAILS.map(({ value, label }) => (
             <FilterPill
               key={value}
               label={label}
               active={filteredStatus === value}
               onClick={() => setFilteredStatus(value)}
+              isDark={isDark}
             />
           ))}
-        </div>
+        </section>
 
-        {/* table */}
-        <div className="rounded-3xl bg-slate-950/40 border border-slate-700/40 shadow-[0_0_40px_rgba(15,23,42,0.25)] overflow-hidden">
-          <div className="hidden md:grid grid-cols-[1.2fr,1.2fr,0.7fr,0.8fr,0.8fr,0.6fr] gap-4 px-6 py-4 text-sm text-slate-200 bg-slate-950/30 border-b border-slate-700/40">
+        <section
+          className={`${
+            isDark
+              ? "bg-slate-950/45 border border-slate-800/40"
+              : "bg-white/90 border border-slate-200"
+          } rounded-4xl shadow-[0_25px_55px_rgba(15,23,42,0.35)] backdrop-blur-xl`}
+        >
+          <div
+            className={`hidden md:grid grid-cols-[1.2fr,1.2fr,0.7fr,0.9fr,0.9fr,0.9fr] gap-6 px-8 py-5 text-sm font-semibold uppercase tracking-wide ${
+              isDark ? "text-slate-200" : "text-slate-600"
+            }`}
+          >
             <div>Company</div>
             <div>Position</div>
             <div>Applied</div>
             <div>Status</div>
             <div>Source</div>
+            <div>Notes</div>
             <div className="text-center">Actions</div>
           </div>
-          <div className="divide-y divide-slate-800/40">
+          <div className="divide-y divide-slate-800/20">
             {filteredApplications.length === 0 ? (
-              <p className="px-6 py-6 text-slate-400 text-sm">No applications.</p>
+              <p className={`px-6 py-8 text-center text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
+                Belum ada data lamaran.
+              </p>
             ) : (
               filteredApplications.map((app) => (
                 <div
                   key={app.id}
-                  className="grid md:grid-cols-[1.2fr,1.2fr,0.7fr,0.8fr,0.8fr,0.6fr] gap-4 px-6 py-4 text-sm items-center"
+                  className="grid gap-6 px-6 py-5 md:grid-cols-[1.2fr,1.2fr,0.7fr,0.9fr,0.9fr,0.9fr] md:items-center"
                 >
-                  <div className="font-medium text-slate-50">{app.company}</div>
-                  <div className="text-slate-200">{app.position}</div>
-                  <div className="text-slate-300">{app.applied_at}</div>
+                  <div className="space-y-1">
+                    <p className="text-base font-semibold leading-tight md:text-sm">{app.company}</p>
+                    <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>ID: {app.id.slice(0, 8)}…</p>
+                  </div>
+                  <div className="text-sm md:text-base md:font-medium">{app.position}</div>
+                  <div className={`text-sm ${isDark ? "text-slate-200" : "text-slate-600"}`}>{app.applied_at}</div>
                   <div>
-                    <span className="inline-flex px-3 py-1 rounded-full bg-slate-800/60 text-xs capitalize">
-                      {getStatusLabel(app.status)}
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold capitalize transition-all duration-300 ${
+                        isDark
+                          ? "bg-slate-900/60 text-slate-100"
+                          : "bg-slate-200 text-slate-800"
+                      }`}
+                    >
+                      {STATUS_LABEL_MAP[normalizeStatus(app.status)]}
                     </span>
                   </div>
-                  <div className="text-slate-200">{getSourceLabel(app.source)}</div>
-                  <div className="flex gap-2 justify-center">
+                  <div className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-slate-700"}`}>
+                    {SOURCE_LABEL_MAP[normalizeSource(app.source)]}
+                  </div>
+                  <div className={`text-sm leading-relaxed md:line-clamp-2 ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                    {app.notes || "—"}
+                  </div>
+                  <div className="flex gap-2 md:justify-center">
                     <button
                       onClick={() => openEdit(app)}
-                      className="px-3 py-1 rounded-full bg-slate-700 text-xs hover:bg-slate-600 transition"
+                      className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${
+                        isDark
+                          ? "bg-slate-800 text-slate-100 hover:bg-slate-700"
+                          : "bg-slate-200 text-slate-800 hover:bg-slate-300"
+                      }`}
                     >
                       Edit
                     </button>
                     <button
                       onClick={() => handleDelete(app.id)}
-                      className="px-3 py-1 rounded-full bg-rose-500 text-xs text-slate-50"
+                      className="rounded-full px-4 py-1.5 text-xs font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70 bg-rose-500 hover:bg-rose-600"
                     >
                       Delete
                     </button>
@@ -480,117 +556,139 @@ export default function DashboardClient() {
               ))
             )}
           </div>
-        </div>
+        </section>
       </main>
 
-      {/* modal */}
       {isModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-sm px-4">
-          <div className="w-full max-w-lg rounded-3xl bg-slate-950/90 border border-slate-700/60 shadow-[0_0_60px_rgba(99,102,241,0.35)] p-6 animate-[fadeIn_0.2s_ease-out]">
-            <h2 className="text-xl font-semibold mb-4 text-slate-50">
-              {editingId ? "Edit Application" : "New Application"}
-            </h2>
-            <div className="space-y-4 max-h-[82vh] overflow-y-auto">
-              <div>
-                <label className="block text-sm mb-1 text-slate-200">Company</label>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-sm">
+          <div
+            className={`w-full max-w-xl transform rounded-4xl border p-6 shadow-[0_32px_80px_rgba(15,23,42,0.55)] transition-all duration-500 ${
+              isDark
+                ? "border-slate-700/60 bg-slate-950/90"
+                : "border-slate-200 bg-white/95"
+            } animate-modal-pop`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+          >
+            <div className="flex items-center justify-between">
+              <h2 id="modal-title" className="text-xl font-semibold">
+                {editingId ? "Edit Application" : "New Application"}
+              </h2>
+              <button
+                onClick={closeModal}
+                className="rounded-full border border-transparent p-2 text-sm transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
+                aria-label="Close"
+              >
+                ×
+              </button>
+            </div>
+            <p className={`mt-1 text-sm ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+              Lengkapi informasi di bawah ini untuk melacak progres lamaranmu.
+            </p>
+            <div className="mt-6 space-y-5 overflow-y-auto pr-1" style={{ maxHeight: "65vh" }}>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold">Company</label>
                 <input
                   value={form.company}
-                  onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
-                  className="w-full rounded-2xl bg-slate-900/60 border border-slate-700 px-3 py-2 text-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                  placeholder="Nama perusahaan"
+                  onChange={(event) => setForm((prev) => ({ ...prev, company: event.target.value }))}
+                  className={inputClass}
+                  placeholder="Silakan isi nama perusahaan"
                 />
-                <p className="text-xs text-slate-400 mt-1">
-                  Nama perusahaan tempat kamu melamar.
-                </p>
+                <p className={helperTextClass}>Contoh: PT Ayam Jago Tbk.</p>
               </div>
-              <div>
-                <label className="block text-sm mb-1 text-slate-200">Position</label>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold">Position</label>
                 <input
                   value={form.position}
-                  onChange={(e) => setForm((f) => ({ ...f, position: e.target.value }))}
-                  className="w-full rounded-2xl bg-slate-900/60 border border-slate-700 px-3 py-2 text-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                  placeholder="Contoh: Admin Gudang / IT Support"
+                  onChange={(event) => setForm((prev) => ({ ...prev, position: event.target.value }))}
+                  className={inputClass}
+                  placeholder="Silakan isi posisi yang kamu lamar"
                 />
-                <p className="text-xs text-slate-400 mt-1">Jabatan atau role yang ingin kamu isi.</p>
+                <p className={helperTextClass}>Contoh: Admin Gudang / IT Support / Designer.</p>
               </div>
-              <div>
-                <label className="block text-sm mb-1 text-slate-200">Applied at</label>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold">Applied At</label>
                 <input
                   type="date"
                   value={form.applied_at}
-                  onChange={(e) => setForm((f) => ({ ...f, applied_at: e.target.value }))}
-                  className="w-full rounded-2xl bg-slate-900/60 border border-slate-700 px-3 py-2 text-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  onChange={(event) => setForm((prev) => ({ ...prev, applied_at: event.target.value }))}
+                  className={inputClass}
                 />
-                <p className="text-xs text-slate-400 mt-1">Pilih tanggal saat kamu mengirim lamaran.</p>
+                <p className={helperTextClass}>Tanggal saat lamaran dikirim.</p>
               </div>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm mb-1 text-slate-200">Status</label>
+              <div className="grid gap-5 md:grid-cols-2">
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold">Status</label>
                   <select
                     value={form.status}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, status: e.target.value as ApplicationStatus }))
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, status: event.target.value as ApplicationStatus }))
                     }
-                    className="w-full rounded-2xl bg-slate-900 border border-slate-700 px-3 py-2 text-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    className={`${selectClass} bg-gradient-to-br from-transparent to-transparent`}
                   >
                     {STATUS_DETAILS.map(({ value, label }) => (
-                      <option key={value} value={value} className="bg-slate-900 text-slate-50">
+                      <option key={value} value={value} className="bg-slate-900 text-slate-50 dark:bg-slate-900 dark:text-slate-50">
                         {label}
                       </option>
                     ))}
                   </select>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Pilih tahapan terbaru proses rekrutmen kamu.
-                  </p>
+                  <p className={helperTextClass}>Pilih tahapan terbaru proses rekrutmen.</p>
                 </div>
-                <div>
-                  <label className="block text-sm mb-1 text-slate-200">Source</label>
+                <div className="space-y-1.5">
+                  <label className="text-sm font-semibold">Source</label>
                   <select
                     value={form.source}
-                    onChange={(e) =>
-                      setForm((f) => ({ ...f, source: e.target.value as ApplicationSource }))
+                    onChange={(event) =>
+                      setForm((prev) => ({ ...prev, source: event.target.value as ApplicationSource }))
                     }
-                    className="w-full rounded-2xl bg-slate-900 border border-slate-700 px-3 py-2 text-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                    className={`${selectClass} shadow-[0_18px_48px_rgba(99,102,241,0.35)]`}
                   >
                     {SOURCE_DETAILS.map(({ value, label }) => (
-                      <option key={value} value={value} className="bg-slate-900 text-slate-50">
+                      <option key={value} value={value} className="bg-slate-900 text-slate-50 dark:bg-slate-900 dark:text-slate-50">
                         {label}
                       </option>
                     ))}
                   </select>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Dari mana kamu menemukan lowongan ini.
-                  </p>
+                  <p className={helperTextClass}>Dari mana kamu menemukan lowongan ini.</p>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm mb-1 text-slate-200">Notes</label>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold">Notes</label>
                 <textarea
                   value={form.notes}
-                  onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
-                  className="w-full rounded-2xl bg-slate-900/60 border border-slate-700 px-3 py-2 text-slate-50 focus:outline-none focus:ring-2 focus:ring-indigo-400 min-h-[110px]"
-                  placeholder="Catatan penting seputar progres atau hal yang perlu diingat."
+                  onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
+                  className={textareaClass}
+                  placeholder="Catatan penting: misal jadwal interview atau contact HR."
                 />
               </div>
-              {errorCreate ? (
-                <p className="text-sm text-rose-400 bg-rose-400/10 border border-rose-400/40 rounded-2xl px-3 py-2">
-                  {errorCreate}
+              {errorMessage ? (
+                <p className="rounded-2xl border border-rose-400/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-200 dark:text-rose-200">
+                  {errorMessage}
                 </p>
               ) : null}
             </div>
-            <div className="flex justify-end gap-3 mt-6">
+            <div className="mt-6 flex justify-end gap-3">
               <button
                 onClick={closeModal}
-                className="px-4 py-2 rounded-2xl border border-slate-600 text-slate-50 hover:bg-slate-800 transition"
+                className={`rounded-3xl px-5 py-2 text-sm font-semibold transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/70 ${
+                  isDark
+                    ? "border border-slate-600/60 text-slate-200 hover:bg-slate-900/60"
+                    : "border border-slate-300 text-slate-700 hover:bg-slate-100"
+                }`}
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
-                disabled={loadingCreate}
-                className="px-5 py-2 rounded-2xl bg-gradient-to-r from-indigo-500 to-fuchsia-500 text-slate-50 font-semibold shadow-lg shadow-indigo-500/40 disabled:opacity-60"
+                disabled={loadingMutation}
+                className={`rounded-3xl px-6 py-2 text-sm font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 disabled:cursor-not-allowed disabled:opacity-60 ${
+                  isDark
+                    ? "bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-purple-500 shadow-[0_22px_48px_rgba(129,140,248,0.45)]"
+                    : "bg-gradient-to-r from-indigo-400 via-fuchsia-400 to-purple-400 shadow-[0_22px_48px_rgba(129,140,248,0.35)]"
+                }`}
               >
-                {loadingCreate ? "Saving..." : editingId ? "Save" : "Create"}
+                {loadingMutation ? "Saving…" : editingId ? "Save" : "Create"}
               </button>
             </div>
           </div>
@@ -600,22 +698,68 @@ export default function DashboardClient() {
   );
 }
 
-function FilterPill({
-  label,
-  active,
-  onClick,
-}: {
+type IconProps = SVGProps<SVGSVGElement>;
+
+function SunIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2" />
+      <path d="M12 20v2" />
+      <path d="M4.93 4.93 6.34 6.34" />
+      <path d="M17.66 17.66 19.07 19.07" />
+      <path d="M2 12h2" />
+      <path d="M20 12h2" />
+      <path d="M6.34 17.66 4.93 19.07" />
+      <path d="M19.07 4.93 17.66 6.34" />
+    </svg>
+  );
+}
+
+function MoonIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M21 12.79A9 9 0 0 1 11.21 3 7 7 0 1 0 21 12.79Z" />
+    </svg>
+  );
+}
+
+function PlusIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+
+function DownloadIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M12 3v12" />
+      <path d="m7 12 5 5 5-5" />
+      <path d="M5 19h14" />
+    </svg>
+  );
+}
+
+type FilterPillProps = {
   label: string;
   active: boolean;
   onClick: () => void;
-}) {
+  isDark: boolean;
+};
+
+function FilterPill({ label, active, onClick, isDark }: FilterPillProps) {
   return (
     <button
       onClick={onClick}
-      className={`px-5 py-2 rounded-full border text-sm capitalize transition ${
+      className={`rounded-full px-5 py-2 text-sm font-semibold capitalize transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${
         active
-          ? "bg-indigo-500 text-slate-50 border-indigo-400 shadow-[0_0_25px_rgba(99,102,241,0.5)]"
-          : "bg-slate-950/30 text-slate-100 border-slate-700/40 hover:bg-slate-900/60"
+          ? "bg-indigo-500 text-white shadow-[0_20px_45px_rgba(99,102,241,0.45)]"
+          : isDark
+          ? "border border-slate-700/40 bg-slate-900/50 text-slate-200 hover:bg-slate-900/70"
+          : "border border-slate-300 bg-white/70 text-slate-700 hover:bg-slate-100"
       }`}
     >
       {label}
@@ -623,50 +767,4 @@ function FilterPill({
   );
 }
 
-type IconProps = SVGProps<SVGSVGElement>;
-
-function SunIcon(props: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <circle cx="12" cy="12" r="3.25" stroke="currentColor" />
-      <path d="M12 4V2" stroke="currentColor" />
-      <path d="M12 22v-2" stroke="currentColor" />
-      <path d="M4 12H2" stroke="currentColor" />
-      <path d="M22 12h-2" stroke="currentColor" />
-      <path d="m18.364 5.636-1.414 1.414" stroke="currentColor" />
-      <path d="m7.05 16.95-1.414 1.414" stroke="currentColor" />
-      <path d="m5.636 5.636 1.414 1.414" stroke="currentColor" />
-      <path d="m16.95 16.95 1.414 1.414" stroke="currentColor" />
-    </svg>
-  );
-}
-
-function MoonIcon(props: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path
-        d="M21 12.79A9 9 0 0 1 11.21 3 7 7 0 1 0 21 12.79Z"
-        stroke="currentColor"
-      />
-    </svg>
-  );
-}
-
-function PlusIcon(props: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M12 5v14" stroke="currentColor" />
-      <path d="M5 12h14" stroke="currentColor" />
-    </svg>
-  );
-}
-
-function DownloadIcon(props: IconProps) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" {...props}>
-      <path d="M12 3v12" stroke="currentColor" />
-      <path d="m7 12 5 5 5-5" stroke="currentColor" />
-      <path d="M5 19h14" stroke="currentColor" />
-    </svg>
-  );
-}
+export { normalizeSource as toSource, normalizeStatus as toStatus };
