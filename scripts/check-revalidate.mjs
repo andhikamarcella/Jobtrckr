@@ -19,11 +19,21 @@ async function walk(dir) {
         return [];
       }
       const content = await readFile(fullPath, 'utf8');
-      const match = content.match(/export\s+const\s+revalidate\s*=\s*\{/);
-      if (match) {
-        return [{ file: fullPath, snippet: match[0] }];
+      const matches = [];
+      const exportRegex = /export\s+const\s+revalidate\s*=\s*/g;
+      let exportMatch;
+      while ((exportMatch = exportRegex.exec(content)) !== null) {
+        const start = exportMatch.index + exportMatch[0].length;
+        const remainder = content.slice(start).trimStart();
+        const tokenMatch = remainder.match(/^[^\s;]+/);
+        const token = tokenMatch ? tokenMatch[0] : '';
+
+        if (token.startsWith('{') || !/^(?:false|\d+)$/.test(token)) {
+          const snippet = content.slice(exportMatch.index, start + token.length).split('\n')[0];
+          matches.push({ file: fullPath, snippet });
+        }
       }
-      return [];
+      return matches;
     })
   );
 
