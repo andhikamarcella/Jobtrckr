@@ -1,11 +1,22 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { STATUS_OPTIONS, type StatusFilterValue } from './StatusFilter';
+import { useEffect, useState } from "react";
+import {
+  Box,
+  Button,
+  ButtonGroup,
+  FormControl,
+  FormLabel,
+  Input,
+  Select,
+  Stack,
+  Textarea
+} from "@chakra-ui/react";
+import { STATUS_OPTIONS, type StatusFilterValue } from "./StatusFilter";
 
-const STATUS_SELECT_OPTIONS = STATUS_OPTIONS.filter((status) => status !== 'all');
+const STATUS_SELECT_OPTIONS = STATUS_OPTIONS.filter((status) => status !== "all");
 
-type ApplicationStatus = Exclude<StatusFilterValue, 'all'>;
+type ApplicationStatus = Exclude<StatusFilterValue, "all">;
 
 export interface ApplicationPayload {
   id?: string;
@@ -17,24 +28,24 @@ export interface ApplicationPayload {
 }
 
 interface ApplicationFormProps {
-  mode: 'create' | 'edit';
+  mode: "create" | "edit";
   initialData?: ApplicationPayload | null;
   onSubmit: (payload: ApplicationPayload) => Promise<void> | void;
   onCancel: () => void;
 }
 
 const defaultFormState: ApplicationPayload = {
-  company: '',
-  position: '',
+  company: "",
+  position: "",
   applied_at: new Date().toISOString().slice(0, 10),
-  status: 'waiting',
-  notes: ''
+  status: "waiting",
+  notes: ""
 };
 
 export function ApplicationForm({ mode, initialData, onSubmit, onCancel }: ApplicationFormProps) {
   const [formState, setFormState] = useState<ApplicationPayload>(defaultFormState);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const isEditMode = mode === 'edit';
+  const isEditMode = mode === "edit";
 
   useEffect(() => {
     if (initialData) {
@@ -67,95 +78,54 @@ export function ApplicationForm({ mode, initialData, onSubmit, onCancel }: Appli
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label htmlFor="company" className="mb-1 block text-sm font-medium text-slate-700">
-          Company<span className="text-red-500">*</span>
-        </label>
-        <input
-          id="company"
-          name="company"
-          value={formState.company}
-          onChange={handleChange}
-          required
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-        />
-      </div>
-      <div>
-        <label htmlFor="position" className="mb-1 block text-sm font-medium text-slate-700">
-          Position<span className="text-red-500">*</span>
-        </label>
-        <input
-          id="position"
-          name="position"
-          value={formState.position}
-          onChange={handleChange}
-          required
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-        />
-      </div>
-      <div>
-        <label htmlFor="applied_at" className="mb-1 block text-sm font-medium text-slate-700">
-          Applied At<span className="text-red-500">*</span>
-        </label>
-        <input
-          type="date"
-          id="applied_at"
-          name="applied_at"
-          value={formState.applied_at}
-          onChange={handleChange}
-          required
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-        />
-      </div>
-      <div>
-        <label htmlFor="status" className="mb-1 block text-sm font-medium text-slate-700">
-          Status<span className="text-red-500">*</span>
-        </label>
-        <select
-          id="status"
-          name="status"
-          value={formState.status}
-          onChange={handleChange}
-          required
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-        >
-          {STATUS_SELECT_OPTIONS.map((status) => (
-            <option key={status} value={status}>
-              {status}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label htmlFor="notes" className="mb-1 block text-sm font-medium text-slate-700">
-          Notes
-        </label>
-        <textarea
-          id="notes"
-          name="notes"
-          value={formState.notes ?? ''}
-          onChange={handleChange}
-          rows={4}
-          className="w-full rounded-lg border border-slate-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-        />
-      </div>
-      <div className="flex items-center justify-end gap-3 pt-2">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {isEditMode ? 'Update Application' : 'Create Application'}
-        </button>
-      </div>
-    </form>
+    <Box as="form" onSubmit={handleSubmit}>
+      <Stack spacing={4}>
+        <FormControl isRequired>
+          <FormLabel htmlFor="company">Company</FormLabel>
+          <Input id="company" name="company" value={formState.company} onChange={handleChange} />
+        </FormControl>
+
+        <FormControl isRequired>
+          <FormLabel htmlFor="position">Position</FormLabel>
+          <Input id="position" name="position" value={formState.position} onChange={handleChange} />
+        </FormControl>
+
+        <FormControl isRequired>
+          <FormLabel htmlFor="applied_at">Applied At</FormLabel>
+          <Input
+            type="date"
+            id="applied_at"
+            name="applied_at"
+            value={formState.applied_at}
+            onChange={handleChange}
+          />
+        </FormControl>
+
+        <FormControl isRequired>
+          <FormLabel htmlFor="status">Status</FormLabel>
+          <Select id="status" name="status" value={formState.status} onChange={handleChange}>
+            {STATUS_SELECT_OPTIONS.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </Select>
+        </FormControl>
+
+        <FormControl>
+          <FormLabel htmlFor="notes">Notes</FormLabel>
+          <Textarea id="notes" name="notes" value={formState.notes ?? ""} onChange={handleChange} rows={4} />
+        </FormControl>
+
+        <ButtonGroup justifyContent="flex-end" pt={2}>
+          <Button variant="outline" onClick={onCancel} isDisabled={isSubmitting}>
+            Cancel
+          </Button>
+          <Button colorScheme="blue" type="submit" isLoading={isSubmitting}>
+            {isEditMode ? "Update Application" : "Create Application"}
+          </Button>
+        </ButtonGroup>
+      </Stack>
+    </Box>
   );
 }

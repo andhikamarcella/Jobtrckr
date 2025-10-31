@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import clsx from 'clsx';
+import { Button, Wrap, WrapItem } from "@chakra-ui/react";
 
-const STATUS_OPTIONS = ['all', 'waiting', 'interview', 'rejected', 'hired'] as const;
+const STATUS_OPTIONS = ["all", "waiting", "interview", "rejected", "hired"] as const;
 
 export type StatusFilterValue = (typeof STATUS_OPTIONS)[number];
 
@@ -11,25 +11,25 @@ interface StatusFilterProps {
   onChange: (status: StatusFilterValue) => void;
 }
 
+const getLabel = (status: StatusFilterValue) =>
+  status === "all" ? "All" : status.charAt(0).toUpperCase() + status.slice(1);
+
 export function StatusFilter({ activeStatus, onChange }: StatusFilterProps) {
   return (
-    <div className="flex flex-wrap gap-2">
+    <Wrap spacing={2}>
       {STATUS_OPTIONS.map((status) => (
-        <button
-          key={status}
-          type="button"
-          onClick={() => onChange(status)}
-          className={clsx(
-            'rounded-full border px-4 py-2 text-sm font-medium capitalize transition-colors',
-            activeStatus === status
-              ? 'border-blue-600 bg-blue-600 text-white shadow'
-              : 'border-slate-300 bg-white text-slate-600 hover:border-blue-500 hover:text-blue-600'
-          )}
-        >
-          {status === 'all' ? 'All' : status}
-        </button>
+        <WrapItem key={status}>
+          <Button
+            size="sm"
+            variant={activeStatus === status ? "solid" : "outline"}
+            colorScheme="blue"
+            onClick={() => onChange(status)}
+          >
+            {getLabel(status)}
+          </Button>
+        </WrapItem>
       ))}
-    </div>
+    </Wrap>
   );
 }
 

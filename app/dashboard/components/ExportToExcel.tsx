@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Button } from "@chakra-ui/react";
 
 import {
   createApplicationsWorkbookBlob,
@@ -26,12 +27,15 @@ export function ExportToExcel({ applications }: ExportToExcelProps) {
   };
 
   return (
-    <button
+    <Button
       onClick={handleExport}
-      disabled={downloading || applications.length === 0}
-      className="px-4 py-2 rounded-md bg-emerald-600 text-white text-sm hover:bg-emerald-700 disabled:bg-gray-400"
+      isLoading={downloading}
+      loadingText="Exporting..."
+      colorScheme="green"
+      variant="solid"
+      isDisabled={applications.length === 0}
     >
-      {downloading ? "Exporting..." : "Export to Excel"}
-    </button>
+      Export to Excel
+    </Button>
   );
 }

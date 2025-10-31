@@ -9,14 +9,17 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@chakra-ui/react": "^2.8.2",
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.0",
     "@supabase/supabase-js": "2.43.1",
     "file-saver": "2.0.5",
+    "framer-motion": "^11.0.3",
     "next": "14.2.3",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "recharts": "2.9.0",
-    "xlsx": "0.18.5",
-    "clsx": "2.1.0"
+    "xlsx": "0.18.5"
   },
   "devDependencies": {
     "@types/node": "20.11.30",

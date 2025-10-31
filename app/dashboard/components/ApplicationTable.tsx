@@ -1,6 +1,20 @@
-'use client';
+"use client";
 
-import type { ApplicationPayload } from './ApplicationForm';
+import {
+  Badge,
+  Box,
+  Button,
+  ButtonGroup,
+  Table,
+  TableContainer,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
+  Text
+} from "@chakra-ui/react";
+import type { ApplicationPayload } from "./ApplicationForm";
 
 export interface ApplicationRecord extends ApplicationPayload {
   id: string;
@@ -14,68 +28,79 @@ interface ApplicationTableProps {
   onDelete: (application: ApplicationRecord) => void;
 }
 
+const statusColor: Record<string, string> = {
+  waiting: "yellow",
+  interview: "blue",
+  rejected: "red",
+  hired: "green"
+};
+
 export function ApplicationTable({ applications, onEdit, onDelete }: ApplicationTableProps) {
   if (applications.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-        Belum ada data lamaran. Tambahkan data baru untuk mulai melacak.
-      </div>
+      <Box
+        borderWidth="1px"
+        borderStyle="dashed"
+        borderColor="gray.600"
+        bg="gray.800"
+        rounded="lg"
+        p={10}
+        textAlign="center"
+      >
+        <Text color="gray.300">Belum ada data lamaran. Tambahkan data baru untuk mulai melacak.</Text>
+      </Box>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-slate-200 overflow-hidden rounded-lg bg-white shadow">
-        <thead className="bg-slate-50">
-          <tr>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Company</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Position</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Applied</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">Notes</th>
-            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">Actions</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-200">
+    <TableContainer borderWidth="1px" borderColor="gray.700" rounded="lg" bg="gray.800" shadow="lg">
+      <Table variant="simple" colorScheme="gray">
+        <Thead bg="gray.700">
+          <Tr>
+            <Th color="gray.200">Company</Th>
+            <Th color="gray.200">Position</Th>
+            <Th color="gray.200">Applied</Th>
+            <Th color="gray.200">Status</Th>
+            <Th color="gray.200">Notes</Th>
+            <Th color="gray.200" textAlign="right">
+              Actions
+            </Th>
+          </Tr>
+        </Thead>
+        <Tbody>
           {applications.map((application) => (
-            <tr key={application.id} className="hover:bg-slate-50">
-              <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-700">{application.company}</td>
-              <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-600">{application.position}</td>
-              <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-600">
+            <Tr key={application.id} _hover={{ bg: "gray.700" }}>
+              <Td fontWeight="semibold" color="gray.100">
+                {application.company}
+              </Td>
+              <Td color="gray.200">{application.position}</Td>
+              <Td color="gray.200">
                 {new Date(application.applied_at).toLocaleDateString()}
-              </td>
-              <td className="whitespace-nowrap px-4 py-3 text-sm capitalize text-slate-600">
-                <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium capitalize text-slate-600">
+              </Td>
+              <Td>
+                <Badge colorScheme={statusColor[application.status] ?? "gray"} textTransform="capitalize">
                   {application.status}
-                </span>
-              </td>
-              <td className="max-w-xs px-4 py-3 text-sm text-slate-600">
-                <p className="whitespace-pre-line text-sm text-slate-500">
-                  {application.notes ?? '-'}
-                </p>
-              </td>
-              <td className="whitespace-nowrap px-4 py-3 text-right text-sm font-medium">
-                <div className="flex justify-end gap-3">
-                  <button
-                    type="button"
-                    onClick={() => onEdit(application)}
-                    className="rounded-lg border border-blue-500 px-3 py-1.5 text-xs font-semibold text-blue-600 transition-colors hover:bg-blue-50"
-                  >
+                </Badge>
+              </Td>
+              <Td maxW="280px">
+                <Text color="gray.300" whiteSpace="pre-wrap">
+                  {application.notes ?? "-"}
+                </Text>
+              </Td>
+              <Td textAlign="right">
+                <ButtonGroup size="sm" variant="outline" spacing={2}>
+                  <Button onClick={() => onEdit(application)} colorScheme="blue">
                     Edit
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onDelete(application)}
-                    className="rounded-lg border border-red-500 px-3 py-1.5 text-xs font-semibold text-red-600 transition-colors hover:bg-red-50"
-                  >
+                  </Button>
+                  <Button onClick={() => onDelete(application)} colorScheme="red">
                     Delete
-                  </button>
-                </div>
-              </td>
-            </tr>
+                  </Button>
+                </ButtonGroup>
+              </Td>
+            </Tr>
           ))}
-        </tbody>
-      </table>
-    </div>
+        </Tbody>
+      </Table>
+    </TableContainer>
   );
 }

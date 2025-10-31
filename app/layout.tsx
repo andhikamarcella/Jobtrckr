@@ -1,9 +1,10 @@
-import type { Metadata } from 'next';
-import './globals.css';
+import type { Metadata } from "next";
+import "./globals.css";
+import Providers from "./providers";
 
 export const metadata: Metadata = {
-  title: 'JobTrackr Dashboard',
-  description: 'Dashboard untuk melacak lamaran kerja menggunakan Supabase dan Next.js'
+  title: "JobTrackr Dashboard",
+  description: "Dashboard untuk melacak lamaran kerja menggunakan Supabase dan Next.js"
 };
 
 export default function RootLayout({
@@ -13,8 +14,8 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="min-h-screen font-sans antialiased">
-        {children}
+      <body>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );
