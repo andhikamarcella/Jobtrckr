@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
-import { createApplicationsWorkbookBlob } from "@/lib/exportToExcel";
+import { supabase } from "../../lib/supabaseClient";
+import { createApplicationsWorkbookBlob } from "../../lib/exportToExcel";
 import {
   Box,
   Button,
