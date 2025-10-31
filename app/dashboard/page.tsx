@@ -25,6 +25,7 @@ import {
   Spinner,
   Text
 } from "@chakra-ui/react";
+import { fetchApplicationsByStatus } from "@/lib/applications";
 import { supabase } from "@/lib/supabaseClient";
 import { ApplicationForm, type ApplicationPayload } from "./components/ApplicationForm";
 import { ApplicationTable, type ApplicationRecord } from "./components/ApplicationTable";
@@ -71,16 +72,6 @@ const dummyApplications: ApplicationRecord[] = [
   }
 ];
 
-async function fetchApplicationsByStatus(userId: string, status: string) {
-  const { data } = await supabase
-    .from("applications")
-    .select("*")
-    .eq("user_id", userId)
-    .eq("status", status);
-
-  return data as ApplicationRecord[] | null;
-}
-
 export default function DashboardPage() {
   const router = useRouter();
   const [applications, setApplications] = useState<ApplicationRecord[]>([]);
@@ -100,15 +91,7 @@ export default function DashboardPage() {
     const loadApplications = async (user: User) => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase
-          .from("applications")
-          .select("*")
-          .eq("user_id", user.id)
-          .order("applied_at", { ascending: false });
-
-        if (error) {
-          throw error;
-        }
+        const data = await fetchApplicationsByStatus(user.id);
 
         if (!data || data.length === 0) {
           setApplications(dummyApplications);
@@ -489,5 +472,3 @@ function SummaryCard({ title, value, accent }: SummaryCardProps) {
     </Box>
   );
 }
-
-export { fetchApplicationsByStatus };
