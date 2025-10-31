@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type SVGProps } from "react";
+import { useCallback, useEffect, useMemo, useState, type SVGProps } from "react";
 import { createClient } from "@/lib/supabaseClient";
 
 type ApplicationStatus =
@@ -118,6 +118,20 @@ export default function DashboardClient() {
     notes: "",
   });
 
+  const resolveSiteUrl = () => {
+    const envUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    if (envUrl && envUrl.length > 0) {
+      return envUrl;
+    }
+    if (typeof window !== "undefined") {
+      const origin = window.location.origin;
+      if (origin.includes("localhost")) {
+        return origin;
+      }
+    }
+    return "https://jobtrckr.vercel.app";
+  };
+
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
   }, [isDark]);
@@ -206,6 +220,10 @@ export default function DashboardClient() {
     ? "bg-slate-900/45 border border-slate-700/45 text-slate-100 shadow-[0_22px_45px_rgba(15,23,42,0.45)]"
     : "bg-white/95 border border-slate-200 text-slate-900 shadow-[0_22px_45px_rgba(148,163,184,0.28)]";
 
+  const ctaCardClass = isDark
+    ? "bg-gradient-to-br from-slate-950 via-slate-900/80 to-slate-900/60 border border-slate-700/50 text-slate-100 shadow-[0_26px_55px_rgba(2,6,23,0.6)]"
+    : "bg-gradient-to-br from-white via-white/90 to-slate-100 border border-slate-200 text-slate-900 shadow-[0_26px_55px_rgba(148,163,184,0.35)]";
+
   const inputClass = `${
     isDark
       ? "border-slate-600/60 bg-transparent text-slate-100 placeholder:text-slate-400"
@@ -224,10 +242,10 @@ export default function DashboardClient() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    window.location.href = "/auth";
+    window.location.href = resolveSiteUrl();
   };
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setForm({
       company: "",
       position: "",
@@ -238,7 +256,20 @@ export default function DashboardClient() {
     });
     setEditingId(null);
     setErrorMessage("");
-  };
+  }, []);
+
+  useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "i") {
+        event.preventDefault();
+        resetForm();
+        setIsModalOpen(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, [resetForm]);
 
   const openCreate = () => {
     resetForm();
@@ -468,6 +499,44 @@ export default function DashboardClient() {
       </div>
 
       <main className="mx-auto mt-8 space-y-8 px-4 max-w-6xl">
+        <section
+          className={`${ctaCardClass} group relative overflow-hidden rounded-4xl p-6 transition-all duration-500 hover:-translate-y-1 motion-safe:animate-[float-card_18s_ease-in-out_infinite]`}
+        >
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(99,102,241,0.2),_transparent_55%)] opacity-60 transition-opacity duration-500 group-hover:opacity-90" />
+          <div className="relative flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-2 md:max-w-2xl">
+              <p className={`text-xs font-semibold uppercase tracking-[0.25em] ${isDark ? "text-indigo-200" : "text-indigo-500"}`}>
+                New Application
+              </p>
+              <h2 className="text-2xl font-semibold md:text-3xl">
+                Tambahkan lamaran baru dan lanjutkan perjalanan kariermu.
+              </h2>
+              <p className={`text-sm ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                Catat detail perusahaan, posisi, dan progres setiap proses rekrutmen. Statistik akan otomatis diperbarui setelah kamu menyimpan data.
+              </p>
+            </div>
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+              <button
+                onClick={openCreate}
+                className={`relative inline-flex items-center gap-2 overflow-hidden rounded-3xl px-5 py-3 text-sm font-semibold transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${
+                  isDark
+                    ? "bg-gradient-to-r from-indigo-500 via-fuchsia-500 to-purple-500 text-white shadow-[0_25px_50px_rgba(129,140,248,0.45)]"
+                    : "bg-gradient-to-r from-indigo-400 via-fuchsia-400 to-purple-400 text-white shadow-[0_25px_50px_rgba(129,140,248,0.35)]"
+                }`}
+              >
+                <span className="absolute inset-0 -translate-x-full bg-white/30 transition-transform duration-500 ease-out group-hover:translate-x-0" />
+                <span className="relative z-10 flex items-center gap-2">
+                  <PlusIcon className="h-4 w-4" />
+                  Mulai Input
+                </span>
+              </button>
+              <span className={`text-xs ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                Tips: tekan <kbd className="rounded-md border border-slate-500/40 px-1 text-[0.65rem]">Ctrl</kbd> + <kbd className="rounded-md border border-slate-500/40 px-1 text-[0.65rem]">I</kbd> untuk membuka form.
+              </span>
+            </div>
+          </div>
+        </section>
+
         <section className="grid gap-4 md:grid-cols-3 xl:grid-cols-4">
           {summaryCards.map(({ key, label, description, count }) => (
             <article
@@ -556,8 +625,13 @@ export default function DashboardClient() {
                   <div className={isDark ? "text-slate-200" : "text-slate-700"}>
                     {SOURCE_LABEL_MAP[normalizeSource(app.source)]}
                   </div>
-                  <div className={`whitespace-pre-line ${isDark ? "text-slate-300" : "text-slate-600"}`}>
-                    {app.notes ?? "—"}
+                  <div
+                    className={`max-w-md whitespace-pre-line text-sm leading-relaxed ${
+                      isDark ? "text-slate-300" : "text-slate-600"
+                    } md:line-clamp-2`}
+                    title={app.notes ?? ""}
+                  >
+                    {app.notes?.trim() ? app.notes : "—"}
                   </div>
                   <div className="flex items-center justify-start gap-2 md:justify-center">
                     <button
@@ -607,9 +681,13 @@ export default function DashboardClient() {
                     {STATUS_LABEL_MAP[normalizeStatus(app.status)]}
                   </span>
                 </div>
-                {app.notes ? (
-                  <p className="mt-3 whitespace-pre-line text-xs opacity-80">{app.notes}</p>
-                ) : null}
+                {app.notes && app.notes.trim() ? (
+                  <p className="mt-3 whitespace-pre-line text-xs leading-relaxed opacity-85">
+                    {app.notes}
+                  </p>
+                ) : (
+                  <p className="mt-3 text-xs text-slate-400">Tidak ada catatan.</p>
+                )}
                 <div className="mt-4 flex gap-2">
                   <button
                     onClick={() => openEdit(app)}
