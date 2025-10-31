@@ -87,6 +87,18 @@ function normalizeSource(value: string | null | undefined): ApplicationSource {
   return SOURCE_ORDER.includes(slug) ? slug : "lainnya";
 }
 
+function formatOwner(email: string): string {
+  if (!email) return "Guest";
+  const namePart = email.split("@")[0] ?? "Guest";
+  const formatted = namePart
+    .replace(/[._-]+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1));
+  return formatted.join(" ") || "Guest";
+}
+
 export default function DashboardClient() {
   const supabase = createClient();
   const [userEmail, setUserEmail] = useState("");
@@ -168,23 +180,41 @@ export default function DashboardClient() {
     return result;
   }, [applications]);
 
+  const summaryCards = useMemo(
+    () => [
+      {
+        key: "total",
+        label: "Total Applications",
+        description: "Jumlah seluruh lamaran",
+        count: applications.length,
+      },
+      ...STATUS_DETAILS.map(({ value, label, description }) => ({
+        key: value,
+        label,
+        description,
+        count: countsByStatus[value],
+      })),
+    ],
+    [applications.length, countsByStatus]
+  );
+
   const themeAwareCard = isDark
-    ? "bg-slate-900/50 border border-slate-700/50 text-slate-100 shadow-[0_28px_60px_rgba(2,6,23,0.55)]"
-    : "bg-white/90 border border-slate-200 text-slate-900 shadow-[0_24px_55px_rgba(148,163,184,0.35)]";
+    ? "bg-slate-900/55 border border-slate-700/50 text-slate-100 shadow-[0_25px_55px_rgba(2,6,23,0.55)]"
+    : "bg-white/95 border border-slate-200 text-slate-900 shadow-[0_24px_55px_rgba(15,23,42,0.18)]";
 
   const themeAwareSourceCard = isDark
-    ? "bg-slate-900/45 border border-slate-700/50 text-slate-100 shadow-[0_20px_45px_rgba(15,23,42,0.45)]"
-    : "bg-white/95 border border-slate-200 text-slate-900 shadow-[0_20px_40px_rgba(148,163,184,0.3)]";
+    ? "bg-slate-900/45 border border-slate-700/45 text-slate-100 shadow-[0_22px_45px_rgba(15,23,42,0.45)]"
+    : "bg-white/95 border border-slate-200 text-slate-900 shadow-[0_22px_45px_rgba(148,163,184,0.28)]";
 
   const inputClass = `${
     isDark
       ? "border-slate-600/60 bg-transparent text-slate-100 placeholder:text-slate-400"
-      : "border-slate-300 bg-white/90 text-slate-900 placeholder:text-slate-500"
+      : "border-slate-300 bg-white text-slate-900 placeholder:text-slate-500"
   } w-full rounded-2xl border px-4 py-2 text-sm transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70 hover:-translate-y-0.5 hover:shadow-[0_14px_32px_rgba(99,102,241,0.2)]`;
 
   const selectClass = `${
     isDark
-      ? "border-slate-600/60 bg-slate-950/60 text-slate-100"
+      ? "border-slate-600/60 bg-slate-950/70 text-slate-100"
       : "border-slate-300 bg-white text-slate-900"
   } w-full rounded-2xl border px-4 py-2 text-sm appearance-none transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-indigo-400/70 hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(99,102,241,0.28)]`;
 
@@ -331,7 +361,7 @@ export default function DashboardClient() {
 
   return (
     <div
-      className={`min-h-screen pb-14 transition-colors duration-700 ease-out ${
+      className={`min-h-screen pb-16 transition-colors duration-700 ease-out ${
         isDark ? "bg-slate-950 text-slate-50" : "bg-slate-100 text-slate-900"
       }`}
     >
@@ -345,7 +375,7 @@ export default function DashboardClient() {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4">
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-bold md:text-3xl" aria-live="polite">
-              Hi, {userEmail || "Guest"}
+              Hai, {formatOwner(userEmail)}
             </h1>
             <p className={`text-xs transition-colors ${isDark ? "text-slate-300" : "text-slate-600"}`}>
               Pantau semua lamaran kerja kamu dalam satu dashboard.
@@ -362,14 +392,18 @@ export default function DashboardClient() {
               aria-label="Toggle theme"
             >
               <span
-                className={`absolute inset-0 transition-opacity duration-500 ${isDark ? "opacity-0" : "opacity-100"}`}
+                className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 ${
+                  isDark ? "opacity-0" : "opacity-100"
+                }`}
               >
-                <SunIcon className="h-full w-full" />
+                <SunIcon className="h-6 w-6" />
               </span>
               <span
-                className={`absolute inset-0 transition-opacity duration-500 ${isDark ? "opacity-100" : "opacity-0"}`}
+                className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 ${
+                  isDark ? "opacity-100" : "opacity-0"
+                }`}
               >
-                <MoonIcon className="h-full w-full" />
+                <MoonIcon className="h-6 w-6" />
               </span>
             </button>
             <button
@@ -435,9 +469,9 @@ export default function DashboardClient() {
 
       <main className="mx-auto mt-8 space-y-8 px-4 max-w-6xl">
         <section className="grid gap-4 md:grid-cols-3 xl:grid-cols-4">
-          {STATUS_DETAILS.map(({ value, label, description }) => (
+          {summaryCards.map(({ key, label, description, count }) => (
             <article
-              key={value}
+              key={key}
               className={`${themeAwareCard} group relative overflow-hidden rounded-4xl p-5 transition-all duration-500 hover:-translate-y-1`}
               role="status"
               aria-live="polite"
@@ -446,7 +480,7 @@ export default function DashboardClient() {
               <p className={`text-xs font-semibold uppercase tracking-wide ${isDark ? "text-slate-300" : "text-slate-600"}`}>
                 {label}
               </p>
-              <p className="mt-2 text-4xl font-bold">{countsByStatus[value]}</p>
+              <p className="mt-2 text-4xl font-bold">{count}</p>
               <p className={`mt-2 text-sm transition-colors ${isDark ? "text-slate-300" : "text-slate-600"}`}>{description}</p>
             </article>
           ))}
@@ -458,8 +492,8 @@ export default function DashboardClient() {
               key={value}
               className={`${themeAwareSourceCard} group relative overflow-hidden rounded-3xl p-4 transition-all duration-500 hover:-translate-y-1`}
             >
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent to-emerald-400/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
-              <p className={`text-xs font-semibold uppercase tracking-wide ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-transparent via-transparent to-emerald-400/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+              <p className={`text-xs font-semibold uppercase tracking-wide ${isDark ? "text-slate-200" : "text-slate-600"}`}>
                 {label}
               </p>
               <p className={`mt-2 text-3xl font-bold ${isDark ? "text-slate-50" : "text-slate-900"}`}>{countsBySource[value]}</p>
@@ -488,7 +522,7 @@ export default function DashboardClient() {
           } rounded-4xl shadow-[0_25px_55px_rgba(15,23,42,0.35)] backdrop-blur-xl`}
         >
           <div
-            className={`hidden md:grid grid-cols-[1.2fr,1.2fr,0.7fr,0.9fr,0.9fr,0.9fr] gap-6 px-8 py-5 text-sm font-semibold uppercase tracking-wide ${
+            className={`hidden md:grid grid-cols-[1.2fr,1.2fr,0.75fr,0.9fr,0.9fr,1.2fr,0.7fr] gap-6 px-8 py-5 text-sm font-semibold uppercase tracking-wide ${
               isDark ? "text-slate-200" : "text-slate-600"
             }`}
           >
@@ -509,37 +543,28 @@ export default function DashboardClient() {
               filteredApplications.map((app) => (
                 <div
                   key={app.id}
-                  className="grid gap-6 px-6 py-5 md:grid-cols-[1.2fr,1.2fr,0.7fr,0.9fr,0.9fr,0.9fr] md:items-center"
+                  className="grid gap-6 px-6 py-5 text-sm md:grid-cols-[1.2fr,1.2fr,0.75fr,0.9fr,0.9fr,1.2fr,0.7fr]"
                 >
-                  <div className="space-y-1">
-                    <p className="text-base font-semibold leading-tight md:text-sm">{app.company}</p>
-                    <p className={`text-xs ${isDark ? "text-slate-400" : "text-slate-600"}`}>ID: {app.id.slice(0, 8)}…</p>
-                  </div>
-                  <div className="text-sm md:text-base md:font-medium">{app.position}</div>
-                  <div className={`text-sm ${isDark ? "text-slate-200" : "text-slate-600"}`}>{app.applied_at}</div>
+                  <div className={`font-semibold ${isDark ? "text-slate-100" : "text-slate-800"}`}>{app.company}</div>
+                  <div className={isDark ? "text-slate-200" : "text-slate-700"}>{app.position}</div>
+                  <div className={isDark ? "text-slate-300" : "text-slate-600"}>{app.applied_at}</div>
                   <div>
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold capitalize transition-all duration-300 ${
-                        isDark
-                          ? "bg-slate-900/60 text-slate-100"
-                          : "bg-slate-200 text-slate-800"
-                      }`}
-                    >
+                    <span className="inline-flex px-3 py-1 rounded-full bg-slate-800/60 text-xs capitalize text-slate-100">
                       {STATUS_LABEL_MAP[normalizeStatus(app.status)]}
                     </span>
                   </div>
-                  <div className={`text-sm font-medium ${isDark ? "text-slate-200" : "text-slate-700"}`}>
+                  <div className={isDark ? "text-slate-200" : "text-slate-700"}>
                     {SOURCE_LABEL_MAP[normalizeSource(app.source)]}
                   </div>
-                  <div className={`text-sm leading-relaxed md:line-clamp-2 ${isDark ? "text-slate-300" : "text-slate-600"}`}>
-                    {app.notes || "—"}
+                  <div className={`whitespace-pre-line ${isDark ? "text-slate-300" : "text-slate-600"}`}>
+                    {app.notes ?? "—"}
                   </div>
-                  <div className="flex gap-2 md:justify-center">
+                  <div className="flex items-center justify-start gap-2 md:justify-center">
                     <button
                       onClick={() => openEdit(app)}
-                      className={`rounded-full px-4 py-1.5 text-xs font-semibold transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${
+                      className={`rounded-full px-3 py-1 text-xs font-semibold transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${
                         isDark
-                          ? "bg-slate-800 text-slate-100 hover:bg-slate-700"
+                          ? "bg-slate-700/60 text-slate-100 hover:bg-slate-600/70"
                           : "bg-slate-200 text-slate-800 hover:bg-slate-300"
                       }`}
                     >
@@ -547,7 +572,7 @@ export default function DashboardClient() {
                     </button>
                     <button
                       onClick={() => handleDelete(app.id)}
-                      className="rounded-full px-4 py-1.5 text-xs font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70 bg-rose-500 hover:bg-rose-600"
+                      className="rounded-full bg-rose-500 px-3 py-1 text-xs font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70"
                     >
                       Delete
                     </button>
@@ -557,113 +582,159 @@ export default function DashboardClient() {
             )}
           </div>
         </section>
+
+        <section className="flex flex-col gap-3 md:hidden">
+          {filteredApplications.length === 0 ? (
+            <p className={`text-center text-sm ${isDark ? "text-slate-400" : "text-slate-600"}`}>Belum ada data lamaran.</p>
+          ) : (
+            filteredApplications.map((app) => (
+              <article
+                key={app.id}
+                className={`${
+                  isDark
+                    ? "bg-slate-900/40 border border-slate-800/40 text-slate-100"
+                    : "bg-white border border-slate-200 text-slate-900"
+                } rounded-3xl p-4 shadow-[0_18px_45px_rgba(15,23,42,0.35)] transition-all duration-500`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-base font-semibold">{app.company}</p>
+                    <p className="text-xs opacity-75">{app.position}</p>
+                    <p className="text-[10px] opacity-60 mt-2">Applied: {app.applied_at}</p>
+                    <p className="text-[10px] opacity-60">Source: {SOURCE_LABEL_MAP[normalizeSource(app.source)]}</p>
+                  </div>
+                  <span className="rounded-full bg-indigo-500/15 px-3 py-1 text-[10px] font-semibold capitalize text-indigo-200">
+                    {STATUS_LABEL_MAP[normalizeStatus(app.status)]}
+                  </span>
+                </div>
+                {app.notes ? (
+                  <p className="mt-3 whitespace-pre-line text-xs opacity-80">{app.notes}</p>
+                ) : null}
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={() => openEdit(app)}
+                    className={`flex-1 rounded-2xl px-3 py-2 text-xs font-semibold transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${
+                      isDark
+                        ? "bg-slate-800 text-slate-100 hover:bg-slate-700"
+                        : "bg-slate-200 text-slate-800 hover:bg-slate-300"
+                    }`}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(app.id)}
+                    className="flex-1 rounded-2xl bg-rose-500 px-3 py-2 text-xs font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </article>
+            ))
+          )}
+        </section>
       </main>
 
       {isModalOpen ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-sm">
           <div
-            className={`w-full max-w-xl transform rounded-4xl border p-6 shadow-[0_32px_80px_rgba(15,23,42,0.55)] transition-all duration-500 ${
+            className={`${
               isDark
-                ? "border-slate-700/60 bg-slate-950/90"
-                : "border-slate-200 bg-white/95"
-            } animate-modal-pop`}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="modal-title"
+                ? "bg-slate-950/90 border border-slate-700/60"
+                : "bg-white border border-slate-200"
+            } w-full max-w-lg rounded-3xl p-6 shadow-[0_0_60px_rgba(99,102,241,0.35)] transition-transform duration-300 ease-out animate-[fadeScale_0.25s_ease-out]`}
           >
-            <div className="flex items-center justify-between">
-              <h2 id="modal-title" className="text-xl font-semibold">
-                {editingId ? "Edit Application" : "New Application"}
-              </h2>
-              <button
-                onClick={closeModal}
-                className="rounded-full border border-transparent p-2 text-sm transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70"
-                aria-label="Close"
-              >
-                ×
-              </button>
-            </div>
-            <p className={`mt-1 text-sm ${isDark ? "text-slate-300" : "text-slate-600"}`}>
-              Lengkapi informasi di bawah ini untuk melacak progres lamaranmu.
+            <h2 className={`text-xl font-semibold ${isDark ? "text-slate-50" : "text-slate-900"}`}>
+              {editingId ? "Edit Application" : "New Application"}
+            </h2>
+            <p className={helperTextClass + " mt-1"}>
+              Lengkapi detail lamaran kerja kamu di bawah ini.
             </p>
-            <div className="mt-6 space-y-5 overflow-y-auto pr-1" style={{ maxHeight: "65vh" }}>
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold">Company</label>
+            <div className="mt-5 space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+              <div>
+                <label className={`block text-sm font-medium ${isDark ? "text-slate-200" : "text-slate-700"}`}>Company</label>
                 <input
                   value={form.company}
                   onChange={(event) => setForm((prev) => ({ ...prev, company: event.target.value }))}
                   className={inputClass}
                   placeholder="Silakan isi nama perusahaan"
                 />
-                <p className={helperTextClass}>Contoh: PT Ayam Jago Tbk.</p>
+                <p className={helperTextClass + " mt-1"}>Contoh: PT Lion Super Indo.</p>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold">Position</label>
+              <div>
+                <label className={`block text-sm font-medium ${isDark ? "text-slate-200" : "text-slate-700"}`}>Position</label>
                 <input
                   value={form.position}
                   onChange={(event) => setForm((prev) => ({ ...prev, position: event.target.value }))}
                   className={inputClass}
-                  placeholder="Silakan isi posisi yang kamu lamar"
+                  placeholder="Silakan isi posisi yang dilamar"
                 />
-                <p className={helperTextClass}>Contoh: Admin Gudang / IT Support / Designer.</p>
+                <p className={helperTextClass + " mt-1"}>Misal: DC Fresh Administration Staff.</p>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold">Applied At</label>
+              <div>
+                <label className={`block text-sm font-medium ${isDark ? "text-slate-200" : "text-slate-700"}`}>Applied at</label>
                 <input
                   type="date"
                   value={form.applied_at}
                   onChange={(event) => setForm((prev) => ({ ...prev, applied_at: event.target.value }))}
                   className={inputClass}
                 />
-                <p className={helperTextClass}>Tanggal saat lamaran dikirim.</p>
+                <p className={helperTextClass + " mt-1"}>Tanggal ketika lamaran dikirim.</p>
               </div>
-              <div className="grid gap-5 md:grid-cols-2">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold">Status</label>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className={`block text-sm font-medium ${isDark ? "text-slate-200" : "text-slate-700"}`}>Status</label>
                   <select
                     value={form.status}
                     onChange={(event) =>
                       setForm((prev) => ({ ...prev, status: event.target.value as ApplicationStatus }))
                     }
-                    className={`${selectClass} bg-gradient-to-br from-transparent to-transparent`}
+                    className={selectClass}
                   >
-                    {STATUS_DETAILS.map(({ value, label }) => (
-                      <option key={value} value={value} className="bg-slate-900 text-slate-50 dark:bg-slate-900 dark:text-slate-50">
-                        {label}
+                    {STATUS_ORDER.map((status) => (
+                      <option
+                        key={status}
+                        value={status}
+                        className={isDark ? "bg-slate-950 text-slate-100" : "bg-white text-slate-900"}
+                      >
+                        {STATUS_LABEL_MAP[status]}
                       </option>
                     ))}
                   </select>
-                  <p className={helperTextClass}>Pilih tahapan terbaru proses rekrutmen.</p>
+                  <p className={helperTextClass + " mt-1"}>Tahapan terbaru proses rekrutmen.</p>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-semibold">Source</label>
+                <div>
+                  <label className={`block text-sm font-medium ${isDark ? "text-slate-200" : "text-slate-700"}`}>Source</label>
                   <select
                     value={form.source}
                     onChange={(event) =>
                       setForm((prev) => ({ ...prev, source: event.target.value as ApplicationSource }))
                     }
-                    className={`${selectClass} shadow-[0_18px_48px_rgba(99,102,241,0.35)]`}
+                    className={`${selectClass} shadow-[0_0_0] focus:shadow-[0_18px_42px_rgba(16,185,129,0.25)]`}
                   >
-                    {SOURCE_DETAILS.map(({ value, label }) => (
-                      <option key={value} value={value} className="bg-slate-900 text-slate-50 dark:bg-slate-900 dark:text-slate-50">
-                        {label}
+                    {SOURCE_ORDER.map((source) => (
+                      <option
+                        key={source}
+                        value={source}
+                        className={isDark ? "bg-slate-950 text-slate-100" : "bg-white text-slate-900"}
+                      >
+                        {SOURCE_LABEL_MAP[source]}
                       </option>
                     ))}
                   </select>
-                  <p className={helperTextClass}>Dari mana kamu menemukan lowongan ini.</p>
+                  <p className={helperTextClass + " mt-1"}>Asal informasi lowongan pekerjaan.</p>
                 </div>
               </div>
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold">Notes</label>
+              <div>
+                <label className={`block text-sm font-medium ${isDark ? "text-slate-200" : "text-slate-700"}`}>Notes</label>
                 <textarea
                   value={form.notes}
                   onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
                   className={textareaClass}
-                  placeholder="Catatan penting: misal jadwal interview atau contact HR."
+                  placeholder="Catatan penting: jadwal interview, kontak HR, dan sebagainya."
                 />
               </div>
               {errorMessage ? (
-                <p className="rounded-2xl border border-rose-400/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-200 dark:text-rose-200">
+                <p className="rounded-2xl border border-rose-400/50 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
                   {errorMessage}
                 </p>
               ) : null}
