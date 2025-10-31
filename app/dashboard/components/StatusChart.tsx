@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { ApplicationRecord } from "./ApplicationTable";
 
 interface StatusChartProps {
@@ -28,6 +27,8 @@ export function StatusChart({ applications }: StatusChartProps) {
     ];
   }, [applications]);
 
+  const maxValue = chartData.reduce((max, { value }) => (value > max ? value : max), 0) || 1;
+
   return (
     <div
       style={{
@@ -39,16 +40,37 @@ export function StatusChart({ applications }: StatusChartProps) {
       }}
     >
       <h2 style={{ fontSize: "18px", fontWeight: 600, marginBottom: "16px" }}>Status Overview</h2>
-      <div style={{ width: "100%", height: "260px" }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={chartData}>
-            <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
-            <XAxis dataKey="name" stroke="#cbd5f5" tick={{ fill: "#cbd5f5", fontSize: 12 }} />
-            <YAxis allowDecimals={false} stroke="#cbd5f5" tick={{ fill: "#cbd5f5", fontSize: 12 }} />
-            <Tooltip cursor={{ fill: "rgba(59, 130, 246, 0.15)" }} />
-            <Bar dataKey="value" fill="#3b82f6" radius={[6, 6, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
+      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        {chartData.map(({ name, value }) => {
+          const percentage = Math.round((value / maxValue) * 100);
+
+          return (
+            <div key={name} style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", opacity: 0.8 }}>
+                <span>{name}</span>
+                <span>{value}</span>
+              </div>
+              <div
+                style={{
+                  height: "10px",
+                  borderRadius: "9999px",
+                  background: "rgba(59, 130, 246, 0.2)",
+                  overflow: "hidden"
+                }}
+              >
+                <div
+                  style={{
+                    width: `${percentage}%`,
+                    height: "100%",
+                    borderRadius: "9999px",
+                    background: "linear-gradient(90deg, #3b82f6 0%, #6366f1 50%, #a855f7 100%)",
+                    transition: "width 0.4s ease"
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
