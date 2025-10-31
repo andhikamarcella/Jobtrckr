@@ -612,7 +612,7 @@ export default function DashboardClient() {
         </section>
 
         <section
-          className={`${
+          className={`hidden md:block ${
             isDark
               ? "bg-slate-950/45 border border-slate-800/40"
               : "bg-white/95 border border-slate-200"
