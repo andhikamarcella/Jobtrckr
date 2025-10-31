@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseClient } from "@/lib/supabaseClient";
 import { SunIcon, MoonIcon } from "@/lib/heroicons-sun-moon";
@@ -66,6 +66,7 @@ const SOURCES: { value: SourceType; label: string }[] = [
 export default function DashboardPage() {
   const router = useRouter();
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [userEmail, setUserEmail] = useState("");
   const [applications, setApplications] = useState<ApplicationRecord[]>([]);
   const [filter, setFilter] = useState<"all" | StatusType>("all");
@@ -82,6 +83,26 @@ export default function DashboardPage() {
   });
 
   const isDark = theme === "dark";
+  const liveRegionRef = useRef<HTMLParagraphElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setPrefersReducedMotion(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.style.setProperty(
+        "transition",
+        prefersReducedMotion ? "" : "background-color 500ms ease, color 500ms ease"
+      );
+      document.documentElement.dataset.theme = theme;
+    }
+  }, [theme, prefersReducedMotion]);
 
   useEffect(() => {
     const load = async () => {
@@ -106,6 +127,12 @@ export default function DashboardPage() {
     if (filter === "all") return applications;
     return applications.filter((a) => a.status === filter);
   }, [applications, filter]);
+
+  useEffect(() => {
+    if (liveRegionRef.current) {
+      liveRegionRef.current.textContent = `Menampilkan ${filteredApps.length} aplikasi untuk filter ${filter}.`;
+    }
+  }, [filteredApps.length, filter]);
 
   const analytics = useMemo(() => {
     const count = (s: StatusType) => applications.filter((a) => a.status === s).length;
@@ -142,7 +169,9 @@ export default function DashboardPage() {
     return base;
   }, [applications]);
 
-  const toggleTheme = () => setTheme((p) => (p === "dark" ? "light" : "dark"));
+  const toggleTheme = () => {
+    setTheme((previous) => (previous === "dark" ? "light" : "dark"));
+  };
 
   const openCreate = () => {
     setEditingId(null);
@@ -245,15 +274,27 @@ export default function DashboardPage() {
   };
 
   const baseFieldClass =
-    "w-full px-3 py-2 rounded-md text-sm outline-none transition focus:ring-2 focus:ring-blue-500/30";
+    "w-full px-3 py-2 rounded-2xl text-sm outline-none transition focus:ring-2 focus:ring-blue-500/30 focus:outline-none backdrop-blur";
   const themeFieldClass = isDark
-    ? "bg-slate-900/50 border border-slate-700/50 text-slate-100 placeholder:text-slate-400"
-    : "bg-white border border-slate-300 text-slate-900 placeholder:text-slate-500";
+    ? "bg-gradient-to-br from-slate-900/70 via-slate-900/40 to-slate-900/10 border border-slate-700/60 text-slate-100"
+    : "bg-gradient-to-br from-white via-slate-100 to-slate-200/70 border border-slate-300 text-slate-900";
   const fieldClass = `${baseFieldClass} ${themeFieldClass}`;
-  const textAreaClass = `${fieldClass} min-h-[70px]`;
+  const textAreaClass = `${fieldClass} min-h-[90px]`;
 
   return (
-    <div className={isDark ? "min-h-screen bg-slate-950 text-slate-50" : "min-h-screen bg-slate-100 text-slate-900"}>
+    <div
+      className={`${
+        isDark
+          ? "min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-50"
+          : "min-h-screen bg-gradient-to-br from-slate-100 via-slate-50 to-white text-slate-900"
+      } ${prefersReducedMotion ? "" : "transition-colors duration-700 ease-out"}`}
+    >
+      <a
+        href="#dashboard-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:px-4 focus:py-2 focus:rounded-full focus:bg-blue-600 focus:text-white"
+      >
+        Skip to content
+      </a>
       <header
         className={`sticky top-0 z-30 backdrop-blur border-b ${
           isDark ? "bg-slate-950/80 border-slate-700/30" : "bg-white/80 border-slate-200/60"
@@ -267,13 +308,23 @@ export default function DashboardPage() {
           <div className="flex gap-2 items-center">
             <button
               onClick={toggleTheme}
-              className="w-10 h-10 rounded-full bg-slate-900/50 border border-slate-600/60 flex items-center justify-center transition-transform duration-200 hover:-translate-y-1 active:scale-95"
+              className={`w-10 h-10 rounded-full border flex items-center justify-center ${
+                prefersReducedMotion ? "" : "transition-all duration-500 hover:-translate-y-1 active:scale-95"
+              } ${
+                isDark
+                  ? "bg-slate-900/60 border-slate-600/60 shadow-[0_10px_30px_rgba(59,130,246,.4)]"
+                  : "bg-white border-slate-300 shadow-[0_10px_30px_rgba(59,130,246,.25)]"
+              }`}
+              aria-label="Toggle theme"
+              aria-pressed={isDark}
             >
               {isDark ? <SunIcon className="w-5 h-5 text-yellow-300" /> : <MoonIcon className="w-5 h-5 text-slate-800" />}
             </button>
             <button
               onClick={exportCSV}
-              className="btn-primary bg-emerald-500 hover:bg-emerald-600 from-emerald-500 to-emerald-500 shadow-glow"
+              className="btn-primary bg-emerald-500 hover:bg-emerald-600 from-emerald-500 to-emerald-500 shadow-glow focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-400"
+              aria-busy={loadingExport}
+              aria-live="polite"
             >
               {loadingExport ? "Export..." : "Export to Excel"}
             </button>
@@ -282,7 +333,11 @@ export default function DashboardPage() {
             </button>
             <button
               onClick={logout}
-              className={isDark ? "btn-secondary" : "btn-secondary bg-white text-slate-900 border-slate-300"}
+              className={
+                isDark
+                  ? "btn-secondary"
+                  : "btn-secondary bg-white text-slate-900 border-slate-300 hover:shadow-lg"
+              }
             >
               Logout
             </button>
@@ -290,44 +345,49 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
+      <main id="dashboard-content" className="max-w-6xl mx-auto px-4 py-6 space-y-5">
+        <p ref={liveRegionRef} className="sr-only" aria-live="polite" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <AnalyticsCard dark={isDark} label="Total Applications" value={analytics.total} desc="semua lamaran kamu" />
-          <AnalyticsCard dark={isDark} label="Waiting" value={analytics.waiting} desc="menunggu jawaban" accent="text-amber-200" />
-          <AnalyticsCard dark={isDark} label="Screening" value={analytics.screening} desc="sedang di-screening" accent="text-sky-200" />
-          <AnalyticsCard dark={isDark} label="Interview User" value={analytics.interviewUser} desc="siap interview" accent="text-blue-200" />
-          <AnalyticsCard dark={isDark} label="Psikotes" value={analytics.psikotes} desc="uji psikologi" accent="text-purple-200" />
-          <AnalyticsCard dark={isDark} label="Tes Online" value={analytics.tesOnline} desc="tes via web" accent="text-cyan-200" />
-          <AnalyticsCard dark={isDark} label="Training" value={analytics.training} desc="tahap pelatihan" accent="text-lime-200" />
-          <AnalyticsCard dark={isDark} label="MCU" value={analytics.mcu} desc="cek kesehatan awal" accent="text-pink-200" />
-          <AnalyticsCard dark={isDark} label="Tes Kesehatan" value={analytics.tesKesehatan} desc="tes ulang" accent="text-emerald-200" />
-          <AnalyticsCard dark={isDark} label="Offering" value={analytics.offering} desc="tawaran kerja" accent="text-orange-200" />
-          <AnalyticsCard dark={isDark} label="Rejected" value={analytics.rejected} desc="jangan nyerah 🫂" accent="text-red-200" />
-          <AnalyticsCard dark={isDark} label="Hired" value={analytics.hired} desc="selamat 🎉" accent="text-green-200" />
+          <AnalyticsCard dark={isDark} label="Total Applications" value={analytics.total} desc="semua lamaran kamu" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Waiting" value={analytics.waiting} desc="menunggu jawaban" accent="text-amber-200" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Screening" value={analytics.screening} desc="sedang di-screening" accent="text-sky-200" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Interview User" value={analytics.interviewUser} desc="siap interview" accent="text-blue-200" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Psikotes" value={analytics.psikotes} desc="uji psikologi" accent="text-purple-200" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Tes Online" value={analytics.tesOnline} desc="tes via web" accent="text-cyan-200" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Training" value={analytics.training} desc="tahap pelatihan" accent="text-lime-200" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="MCU" value={analytics.mcu} desc="cek kesehatan awal" accent="text-pink-200" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Tes Kesehatan" value={analytics.tesKesehatan} desc="tes ulang" accent="text-emerald-200" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Offering" value={analytics.offering} desc="tawaran kerja" accent="text-orange-200" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Rejected" value={analytics.rejected} desc="jangan nyerah 🫂" accent="text-red-200" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Hired" value={analytics.hired} desc="selamat 🎉" accent="text-green-200" prefersReducedMotion={prefersReducedMotion} />
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <SourceCard dark={isDark} label="LinkedIn" value={bySource.linkedin} />
-          <SourceCard dark={isDark} label="Email" value={bySource.email} />
-          <SourceCard dark={isDark} label="Website" value={bySource.website} />
-          <SourceCard dark={isDark} label="Disnaker" value={bySource.disnaker} />
-          <SourceCard dark={isDark} label="Instagram" value={bySource.instagram} />
-          <SourceCard dark={isDark} label="Teman/Keluarga" value={bySource["teman-keluarga"]} />
-          <SourceCard dark={isDark} label="Lainnya" value={bySource.lainnya} />
+          <SourceCard dark={isDark} label="LinkedIn" value={bySource.linkedin} prefersReducedMotion={prefersReducedMotion} />
+          <SourceCard dark={isDark} label="Email" value={bySource.email} prefersReducedMotion={prefersReducedMotion} />
+          <SourceCard dark={isDark} label="Website" value={bySource.website} prefersReducedMotion={prefersReducedMotion} />
+          <SourceCard dark={isDark} label="Disnaker" value={bySource.disnaker} prefersReducedMotion={prefersReducedMotion} />
+          <SourceCard dark={isDark} label="Instagram" value={bySource.instagram} prefersReducedMotion={prefersReducedMotion} />
+          <SourceCard dark={isDark} label="Teman/Keluarga" value={bySource["teman-keluarga"]} prefersReducedMotion={prefersReducedMotion} />
+          <SourceCard dark={isDark} label="Lainnya" value={bySource.lainnya} prefersReducedMotion={prefersReducedMotion} />
         </div>
 
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap" role="tablist" aria-label="Filter status aplikasi">
           {STATUS_FILTERS.map((s) => (
             <button
               key={s.value}
               onClick={() => setFilter(s.value as any)}
-              className={`px-4 py-1 rounded-full text-sm capitalize transition-transform duration-200 hover:-translate-y-1 active:scale-95 ${
+              className={`px-4 py-1 rounded-full text-sm capitalize focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ${
+                prefersReducedMotion ? "" : "transition-all duration-300 hover:-translate-y-1 active:scale-95"
+              } ${
                 filter === s.value
-                  ? "bg-blue-500 text-white shadow-glow"
+                  ? "bg-gradient-to-r from-blue-500 to-indigo-500 text-white shadow-glow"
                   : isDark
-                  ? "border border-slate-600/40"
-                  : "border border-slate-300 text-slate-900"
+                  ? "border border-slate-600/40 text-slate-100 hover:bg-slate-800/40"
+                  : "border border-slate-300 text-slate-900 hover:bg-slate-200"
               }`}
+              role="tab"
+              aria-selected={filter === s.value}
             >
               {s.label}
             </button>
@@ -336,8 +396,8 @@ export default function DashboardPage() {
 
         <div
           className={`hidden lg:block rounded-2xl overflow-hidden backdrop-blur shadow-glass ${
-            isDark ? "bg-slate-900/30 border border-slate-700/30" : "bg-white border border-slate-200"
-          }`}
+            prefersReducedMotion ? "" : "transition-all duration-500"
+          } ${isDark ? "bg-slate-900/40 border border-slate-700/40" : "bg-white/95 border border-slate-200"}`}
         >
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -373,7 +433,9 @@ export default function DashboardPage() {
                       <td className="px-4 py-3 flex gap-2">
                         <button
                           onClick={() => openEdit(app)}
-                          className={`px-2 py-1 text-xs rounded-md transition-transform duration-200 hover:-translate-y-0.5 active:scale-95 ${
+                          className={`px-2 py-1 text-xs rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 ${
+                            prefersReducedMotion ? "" : "transition-all duration-300 hover:-translate-y-0.5 active:scale-95"
+                          } ${
                             isDark ? "bg-slate-700/50 hover:bg-slate-700" : "bg-slate-200 text-slate-900 hover:bg-slate-300"
                           }`}
                         >
@@ -381,7 +443,10 @@ export default function DashboardPage() {
                         </button>
                         <button
                           onClick={() => deleteApp(app.id)}
-                          className="px-2 py-1 text-xs rounded-md bg-red-500/80 hover:bg-red-500 transition-transform duration-200 hover:-translate-y-0.5 active:scale-95"
+                          className={`px-2 py-1 text-xs rounded-xl bg-gradient-to-r from-red-500/90 to-rose-500/90 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-400 ${
+                            prefersReducedMotion ? "" : "transition-all duration-300 hover:from-red-500 hover:to-rose-500 hover:-translate-y-0.5 active:scale-95"
+                          }`}
+                          aria-label={`Hapus aplikasi ${app.company}`}
                         >
                           Delete
                         </button>
@@ -401,9 +466,11 @@ export default function DashboardPage() {
             filteredApps.map((app) => (
               <div
                 key={app.id}
-                className={`backdrop-blur rounded-3xl p-4 shadow-glass space-y-3 transition-transform duration-200 hover:-translate-y-1 ${
-                  isDark ? "bg-slate-900/40 border border-slate-700/30" : "bg-white border border-slate-200"
-                }`}
+                className={`${
+                  isDark ? "bg-slate-900/40 border border-slate-700/30" : "bg-white/95 border border-slate-200"
+                } ${
+                  prefersReducedMotion ? "" : "transition-transform duration-300 hover:-translate-y-1"
+                } backdrop-blur rounded-3xl p-4 shadow-glass space-y-3`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -418,15 +485,18 @@ export default function DashboardPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => openEdit(app)}
-                    className={`px-3 py-1 text-xs rounded-md transition-transform duration-200 hover:-translate-y-0.5 active:scale-95 ${
-                      isDark ? "bg-slate-700/50" : "bg-slate-200 text-slate-900"
-                    }`}
+                    className={`px-3 py-1 text-xs rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 ${
+                      prefersReducedMotion ? "" : "transition-all duration-300 hover:-translate-y-0.5 active:scale-95"
+                    } ${isDark ? "bg-slate-700/50" : "bg-slate-200 text-slate-900"}`}
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => deleteApp(app.id)}
-                    className="px-3 py-1 text-xs rounded-md bg-red-500/80 transition-transform duration-200 hover:-translate-y-0.5 active:scale-95"
+                    className={`px-3 py-1 text-xs rounded-xl bg-gradient-to-r from-red-500/90 to-rose-500/90 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-400 ${
+                      prefersReducedMotion ? "" : "transition-all duration-300 hover:from-red-500 hover:to-rose-500 hover:-translate-y-0.5 active:scale-95"
+                    }`}
+                    aria-label={`Hapus aplikasi ${app.company}`}
                   >
                     Delete
                   </button>
@@ -440,58 +510,108 @@ export default function DashboardPage() {
       {showModal ? (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
           <div
-            className={`rounded-2xl p-4 w-full max-w-md shadow-glass border ${
+            className={`${
               isDark ? "bg-slate-950 border-slate-700/50" : "bg-white border-slate-200"
-            }`}
+            } ${prefersReducedMotion ? "" : "transition-transform duration-300 hover:-translate-y-1"} rounded-2xl p-4 w-full max-w-md shadow-glass border`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="application-dialog-title"
           >
-            <h2 className="text-lg font-semibold mb-2">{editingId ? "Edit Application" : "New Application"}</h2>
-            <div className="space-y-2 mb-4">
-              <input
-                value={form.company}
-                onChange={(e) => setForm((p) => ({ ...p, company: e.target.value }))}
-                placeholder="Company"
-                className={fieldClass}
-              />
-              <input
-                value={form.position}
-                onChange={(e) => setForm((p) => ({ ...p, position: e.target.value }))}
-                placeholder="Position"
-                className={fieldClass}
-              />
-              <input
-                type="date"
-                value={form.applied_at}
-                onChange={(e) => setForm((p) => ({ ...p, applied_at: e.target.value }))}
-                className={fieldClass}
-              />
-              <select
-                value={form.status}
-                onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as StatusType }))}
-                className={`${fieldClass} cursor-pointer`}
-              >
-                {STATUS_FILTERS.filter((x) => x.value !== "all").map((x) => (
-                  <option key={x.value} value={x.value}>
-                    {x.label}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={form.source}
-                onChange={(e) => setForm((p) => ({ ...p, source: e.target.value as SourceType }))}
-                className={`${fieldClass} cursor-pointer`}
-              >
-                {SOURCES.map((x) => (
-                  <option key={x.value} value={x.value}>
-                    {x.label}
-                  </option>
-                ))}
-              </select>
-              <textarea
-                value={form.notes}
-                onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-                placeholder="Notes"
-                className={textAreaClass}
-              />
+            <h2 id="application-dialog-title" className="text-lg font-semibold mb-2">
+              {editingId ? "Edit Application" : "New Application"}
+            </h2>
+            <div className="space-y-3 mb-4">
+              <div>
+                <label htmlFor="company" className="text-sm font-medium block mb-1">
+                  Company
+                </label>
+                <input
+                  id="company"
+                  value={form.company}
+                  onChange={(e) => setForm((p) => ({ ...p, company: e.target.value }))}
+                  className={fieldClass}
+                  aria-describedby="company-hint"
+                />
+                <p id="company-hint" className="text-xs opacity-60 mt-1">
+                  Nama perusahaan tempat kamu melamar.
+                </p>
+              </div>
+              <div>
+                <label htmlFor="position" className="text-sm font-medium block mb-1">
+                  Position
+                </label>
+                <input
+                  id="position"
+                  value={form.position}
+                  onChange={(e) => setForm((p) => ({ ...p, position: e.target.value }))}
+                  className={fieldClass}
+                />
+              </div>
+              <div>
+                <label htmlFor="applied-at" className="text-sm font-medium block mb-1">
+                  Applied at
+                </label>
+                <input
+                  id="applied-at"
+                  type="date"
+                  value={form.applied_at}
+                  onChange={(e) => setForm((p) => ({ ...p, applied_at: e.target.value }))}
+                  className={fieldClass}
+                />
+              </div>
+              <div>
+                <label htmlFor="status" className="text-sm font-medium block mb-1">
+                  Status
+                </label>
+                <select
+                  id="status"
+                  value={form.status}
+                  onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as StatusType }))}
+                  className={`${fieldClass} cursor-pointer`}
+                >
+                  {STATUS_FILTERS.filter((x) => x.value !== "all").map((x) => (
+                    <option
+                      key={x.value}
+                      value={x.value}
+                      className={isDark ? "bg-slate-900 text-slate-50" : "bg-white text-slate-900"}
+                    >
+                      {x.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="source" className="text-sm font-medium block mb-1">
+                  Source
+                </label>
+                <select
+                  id="source"
+                  value={form.source}
+                  onChange={(e) => setForm((p) => ({ ...p, source: e.target.value as SourceType }))}
+                  className={`${fieldClass} cursor-pointer`}
+                >
+                  {SOURCES.map((x) => (
+                    <option
+                      key={x.value}
+                      value={x.value}
+                      className={isDark ? "bg-slate-900 text-slate-50" : "bg-white text-slate-900"}
+                    >
+                      {x.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="notes" className="text-sm font-medium block mb-1">
+                  Notes
+                </label>
+                <textarea
+                  id="notes"
+                  value={form.notes}
+                  onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
+                  className={textAreaClass}
+                />
+              </div>
             </div>
             <div className="flex justify-end gap-2">
               <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-md border border-slate-600/40 text-sm">
@@ -514,21 +634,24 @@ function AnalyticsCard({
   value,
   desc,
   accent,
+  prefersReducedMotion,
 }: {
   dark: boolean;
   label: string;
   value: number;
   desc: string;
   accent?: string;
+  prefersReducedMotion: boolean;
 }) {
   return (
     <div
-      className={
-        (dark
-          ? "bg-slate-900/50 border border-slate-700/40 "
-          : "bg-white/80 border border-slate-200 ") +
-        "rounded-3xl p-4 backdrop-blur shadow-glass transition-transform duration-200 hover:-translate-y-1 active:scale-95"
-      }
+      className={`${
+        dark
+          ? "bg-gradient-to-br from-slate-900/70 via-slate-900/30 to-slate-900/10 border border-slate-700/50"
+          : "bg-gradient-to-br from-white via-slate-100 to-slate-200 border border-slate-200"
+      } rounded-3xl p-4 backdrop-blur shadow-glass ${
+        prefersReducedMotion ? "" : "transition-transform duration-500 hover:-translate-y-1 hover:shadow-[0_25px_65px_rgba(59,130,246,.35)] active:scale-95"
+      }`}
     >
       <div className="text-xs opacity-70">{label}</div>
       <div className={"text-2xl font-bold mt-2 " + (accent || "")}>{value}</div>
@@ -537,13 +660,26 @@ function AnalyticsCard({
   );
 }
 
-function SourceCard({ dark, label, value }: { dark: boolean; label: string; value: number }) {
+function SourceCard({
+  dark,
+  label,
+  value,
+  prefersReducedMotion,
+}: {
+  dark: boolean;
+  label: string;
+  value: number;
+  prefersReducedMotion: boolean;
+}) {
   return (
     <div
-      className={
-        (dark ? "bg-slate-900/40 border-slate-800/40 " : "bg-white border-slate-200 ") +
-        "rounded-2xl p-3 border flex items-center justify-between transition-transform duration-200 hover:-translate-y-1 active:scale-95"
-      }
+      className={`${
+        dark
+          ? "bg-gradient-to-br from-slate-900/60 via-slate-900/30 to-slate-900/5 border border-slate-800/40"
+          : "bg-gradient-to-br from-white via-slate-100 to-slate-200 border border-slate-200"
+      } rounded-2xl p-3 border flex items-center justify-between ${
+        prefersReducedMotion ? "" : "transition-all duration-400 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(15,23,42,.2)] active:scale-95"
+      }`}
     >
       <div className="text-xs opacity-70">{label}</div>
       <div className="text-base font-semibold">{value}</div>
