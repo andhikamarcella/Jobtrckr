@@ -1,22 +1,20 @@
-import type { Metadata } from "next";
-import type { ReactNode } from "react";
 import "./globals.css";
-import Providers from "./providers";
+import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "JobTrackr Dashboard",
-  description: "Dashboard untuk melacak lamaran kerja menggunakan Supabase dan Next.js"
+  title: "JobTrackr",
+  description: "Dashboard pelacak lamaran kerja",
 };
 
 export default function RootLayout({
-  children
+  children,
 }: {
-  children: ReactNode;
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body>
-        <Providers>{children}</Providers>
+    <html lang="en" suppressHydrationWarning>
+      <body className="min-h-screen bg-slate-950 text-slate-50">
+        {children}
       </body>
     </html>
   );

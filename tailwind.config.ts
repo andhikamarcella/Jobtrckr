@@ -1,15 +1,30 @@
-import type { Config } from 'tailwindcss';
+import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: [
-    './app/**/*.{js,ts,jsx,tsx}',
-    './pages/**/*.{js,ts,jsx,tsx}',
-    './components/**/*.{js,ts,jsx,tsx}'
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
   ],
+  darkMode: "class",
   theme: {
-    extend: {}
+    extend: {
+      colors: {
+        surface: {
+          dark: "#020617",
+          light: "#ffffff"
+        }
+      },
+      boxShadow: {
+        glow: "0 18px 45px rgba(59,130,246,.35)",
+        glass: "0 18px 50px rgba(15,23,42,.45)"
+      },
+      borderRadius: {
+        "4xl": "2.25rem"
+      }
+    },
   },
-  plugins: []
+  plugins: [],
 };
 
 export default config;

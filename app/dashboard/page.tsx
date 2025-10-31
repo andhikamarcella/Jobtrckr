@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
+import { SunIcon, MoonIcon } from "@heroicons/react/24/solid";
 
 type StatusType =
   | "waiting"
@@ -37,11 +38,11 @@ type ApplicationRecord = {
   source: SourceType | null;
 };
 
-const ALL_STATUSES: { value: StatusType | "all"; label: string }[] = [
+const STATUS_FILTERS: { value: StatusType | "all"; label: string }[] = [
   { value: "all", label: "all" },
   { value: "waiting", label: "waiting" },
   { value: "screening", label: "screening" },
-  { value: "mcu", label: "MCU" },
+  { value: "mcu", label: "mcu" },
   { value: "interview-user", label: "interview user" },
   { value: "psikotes", label: "psikotes" },
   { value: "tes-online", label: "tes online" },
@@ -52,7 +53,7 @@ const ALL_STATUSES: { value: StatusType | "all"; label: string }[] = [
   { value: "hired", label: "hired" },
 ];
 
-const ALL_SOURCES: { value: SourceType; label: string }[] = [
+const SOURCES: { value: SourceType; label: string }[] = [
   { value: "linkedin", label: "LinkedIn" },
   { value: "email", label: "Email" },
   { value: "website", label: "Website" },
@@ -106,7 +107,7 @@ export default function DashboardPage() {
   }, [applications, filter]);
 
   const analytics = useMemo(() => {
-    const count = (status: StatusType) => applications.filter((a) => a.status === status).length;
+    const count = (s: StatusType) => applications.filter((a) => a.status === s).length;
     return {
       total: applications.length,
       waiting: count("waiting"),
@@ -181,17 +182,17 @@ export default function DashboardPage() {
       source: form.source,
     };
     if (editingId) {
-      const { data: updated, error } = await supabase
+      const { data: updated } = await supabase
         .from("applications")
         .update(payload)
         .eq("id", editingId)
         .select();
-      if (!error && updated) {
+      if (updated) {
         setApplications((prev) => prev.map((p) => (p.id === editingId ? (updated[0] as any) : p)));
       }
     } else {
-      const { data: inserted, error } = await supabase.from("applications").insert(payload).select();
-      if (!error && inserted) {
+      const { data: inserted } = await supabase.from("applications").insert(payload).select();
+      if (inserted) {
         setApplications((prev) => [inserted[0] as any, ...prev]);
       }
     }
@@ -239,43 +240,45 @@ export default function DashboardPage() {
     router.replace("/");
   };
 
+  const baseFieldClass =
+    "w-full px-3 py-2 rounded-md text-sm outline-none transition focus:ring-2 focus:ring-blue-500/30";
+  const themeFieldClass = isDark
+    ? "bg-slate-900/50 border border-slate-700/50 text-slate-100 placeholder:text-slate-400"
+    : "bg-white border border-slate-300 text-slate-900 placeholder:text-slate-500";
+  const fieldClass = `${baseFieldClass} ${themeFieldClass}`;
+  const textAreaClass = `${fieldClass} min-h-[70px]`;
+
   return (
-    <div className={isDark ? "min-h-screen bg-slate-950 text-white" : "min-h-screen bg-slate-100 text-slate-900"}>
+    <div className={isDark ? "min-h-screen bg-slate-950 text-slate-50" : "min-h-screen bg-slate-100 text-slate-900"}>
       <header
-        className={(isDark ? "bg-slate-950/80 " : "bg-slate-100/80 ") + "sticky top-0 z-30 backdrop-blur border-b border-slate-800/10"}
+        className={`sticky top-0 z-30 backdrop-blur border-b ${
+          isDark ? "bg-slate-950/80 border-slate-700/30" : "bg-white/80 border-slate-200/60"
+        }`}
       >
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3 justify-between flex-wrap">
-          <div className="flex-1 min-w-0">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3 justify-between">
+          <div className="min-w-0">
             <h1 className="text-xl font-bold truncate">Hi, {userEmail}</h1>
             <p className="text-xs opacity-70">Pantau lamaran kamu di sini.</p>
           </div>
-          <div className="flex gap-2 items-center flex-wrap justify-end">
+          <div className="flex gap-2 items-center">
             <button
               onClick={toggleTheme}
-              className={(isDark ? "bg-slate-900/70 border-slate-600/50 " : "bg-white border-slate-300 ") +
-                "w-10 h-10 rounded-full border flex items-center justify-center transition-transform duration-200 hover:-translate-y-1 active:scale-95 shadow-[0_10px_35px_rgba(0,0,0,.25)]"}
-              aria-label="Toggle theme"
+              className="w-10 h-10 rounded-full bg-slate-900/50 border border-slate-600/60 flex items-center justify-center transition-transform duration-200 hover:-translate-y-1 active:scale-95"
             >
-              <span className="text-lg" role="img" aria-hidden>
-                {isDark ? "☀️" : "🌙"}
-              </span>
+              {isDark ? <SunIcon className="w-5 h-5 text-yellow-300" /> : <MoonIcon className="w-5 h-5 text-slate-800" />}
             </button>
             <button
               onClick={exportCSV}
-              className="px-4 py-2 rounded-2xl bg-emerald-500 text-sm font-medium hover:bg-emerald-600 shadow-[0_18px_40px_rgba(16,185,129,.35)] transition-transform duration-200 hover:-translate-y-1 active:scale-95"
+              className="btn-primary bg-emerald-500 hover:bg-emerald-600 from-emerald-500 to-emerald-500 shadow-glow"
             >
               {loadingExport ? "Export..." : "Export to Excel"}
             </button>
-            <button
-              onClick={openCreate}
-              className="px-4 py-2 rounded-2xl bg-gradient-to-r from-blue-500 to-violet-500 text-sm font-medium shadow-[0_18px_40px_rgba(59,130,246,.35)] transition-transform duration-200 hover:-translate-y-1 active:scale-95"
-            >
+            <button onClick={openCreate} className="btn-primary">
               + Add Application
             </button>
             <button
               onClick={logout}
-              className={(isDark ? "px-4 py-2 rounded-2xl border border-slate-500/40 " : "px-4 py-2 rounded-2xl bg-white border shadow-sm ") +
-                "transition-transform duration-200 hover:-translate-y-1 active:scale-95"}
+              className={isDark ? "btn-secondary" : "btn-secondary bg-white text-slate-900 border-slate-300"}
             >
               Logout
             </button>
@@ -283,49 +286,55 @@ export default function DashboardPage() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-5 space-y-5">
+      <main className="max-w-6xl mx-auto px-4 py-6 space-y-5">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <AnalyticCard dark={isDark} label="Total Applications" value={analytics.total} desc="semua lamaran kamu" />
-          <AnalyticCard dark={isDark} label="Waiting" value={analytics.waiting} desc="menunggu jawaban" accent="text-amber-300" />
-          <AnalyticCard dark={isDark} label="Screening" value={analytics.screening} desc="sedang di-screening" accent="text-sky-300" />
-          <AnalyticCard dark={isDark} label="Interview User" value={analytics.interviewUser} desc="siap-siap interview" accent="text-blue-300" />
-          <AnalyticCard dark={isDark} label="Psikotes" value={analytics.psikotes} desc="uji psikologi" accent="text-purple-300" />
-          <AnalyticCard dark={isDark} label="Tes Online" value={analytics.tesOnline} desc="tes via web" accent="text-cyan-300" />
-          <AnalyticCard dark={isDark} label="Training" value={analytics.training} desc="tahap pelatihan" accent="text-lime-300" />
-          <AnalyticCard dark={isDark} label="MCU" value={analytics.mcu} desc="cek kesehatan awal" accent="text-pink-300" />
-          <AnalyticCard dark={isDark} label="Tes Kesehatan" value={analytics.tesKesehatan} desc="cek ulang kesehatan" accent="text-emerald-300" />
-          <AnalyticCard dark={isDark} label="Offering" value={analytics.offering} desc="tawaran kerja" accent="text-orange-300" />
-          <AnalyticCard dark={isDark} label="Rejected" value={analytics.rejected} desc="jangan nyerah ya 🫂" accent="text-red-300" />
-          <AnalyticCard dark={isDark} label="Hired" value={analytics.hired} desc="selamat 🎉" accent="text-green-300" />
+          <AnalyticsCard dark={isDark} label="Total Applications" value={analytics.total} desc="semua lamaran kamu" />
+          <AnalyticsCard dark={isDark} label="Waiting" value={analytics.waiting} desc="menunggu jawaban" accent="text-amber-200" />
+          <AnalyticsCard dark={isDark} label="Screening" value={analytics.screening} desc="sedang di-screening" accent="text-sky-200" />
+          <AnalyticsCard dark={isDark} label="Interview User" value={analytics.interviewUser} desc="siap interview" accent="text-blue-200" />
+          <AnalyticsCard dark={isDark} label="Psikotes" value={analytics.psikotes} desc="uji psikologi" accent="text-purple-200" />
+          <AnalyticsCard dark={isDark} label="Tes Online" value={analytics.tesOnline} desc="tes via web" accent="text-cyan-200" />
+          <AnalyticsCard dark={isDark} label="Training" value={analytics.training} desc="tahap pelatihan" accent="text-lime-200" />
+          <AnalyticsCard dark={isDark} label="MCU" value={analytics.mcu} desc="cek kesehatan awal" accent="text-pink-200" />
+          <AnalyticsCard dark={isDark} label="Tes Kesehatan" value={analytics.tesKesehatan} desc="tes ulang" accent="text-emerald-200" />
+          <AnalyticsCard dark={isDark} label="Offering" value={analytics.offering} desc="tawaran kerja" accent="text-orange-200" />
+          <AnalyticsCard dark={isDark} label="Rejected" value={analytics.rejected} desc="jangan nyerah 🫂" accent="text-red-200" />
+          <AnalyticsCard dark={isDark} label="Hired" value={analytics.hired} desc="selamat 🎉" accent="text-green-200" />
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <TinySourceCard dark={isDark} label="LinkedIn" value={bySource.linkedin} />
-          <TinySourceCard dark={isDark} label="Email" value={bySource.email} />
-          <TinySourceCard dark={isDark} label="Website" value={bySource.website} />
-          <TinySourceCard dark={isDark} label="Disnaker" value={bySource.disnaker} />
-          <TinySourceCard dark={isDark} label="Instagram" value={bySource.instagram} />
-          <TinySourceCard dark={isDark} label="Teman/Keluarga" value={bySource["teman-keluarga"]} />
-          <TinySourceCard dark={isDark} label="Lainnya" value={bySource.lainnya} />
+          <SourceCard dark={isDark} label="LinkedIn" value={bySource.linkedin} />
+          <SourceCard dark={isDark} label="Email" value={bySource.email} />
+          <SourceCard dark={isDark} label="Website" value={bySource.website} />
+          <SourceCard dark={isDark} label="Disnaker" value={bySource.disnaker} />
+          <SourceCard dark={isDark} label="Instagram" value={bySource.instagram} />
+          <SourceCard dark={isDark} label="Teman/Keluarga" value={bySource["teman-keluarga"]} />
+          <SourceCard dark={isDark} label="Lainnya" value={bySource.lainnya} />
         </div>
 
         <div className="flex gap-2 flex-wrap">
-          {ALL_STATUSES.map((f) => (
+          {STATUS_FILTERS.map((s) => (
             <button
-              key={f.value}
-              onClick={() => setFilter(f.value as any)}
-              className={
-                f.value === filter
-                  ? "px-4 py-1 rounded-full bg-blue-500 text-white text-sm capitalize shadow-[0_15px_40px_rgba(59,130,246,.25)] transition-transform duration-200 hover:-translate-y-1 active:scale-95"
-                  : "px-4 py-1 rounded-full border border-slate-500/20 text-sm capitalize transition-transform duration-200 hover:-translate-y-1 active:scale-95"
-              }
+              key={s.value}
+              onClick={() => setFilter(s.value as any)}
+              className={`px-4 py-1 rounded-full text-sm capitalize transition-transform duration-200 hover:-translate-y-1 active:scale-95 ${
+                filter === s.value
+                  ? "bg-blue-500 text-white shadow-glow"
+                  : isDark
+                  ? "border border-slate-600/40"
+                  : "border border-slate-300 text-slate-900"
+              }`}
             >
-              {f.label}
+              {s.label}
             </button>
           ))}
         </div>
 
-        <div className="hidden lg:block rounded-2xl overflow-hidden border border-slate-700/20 bg-slate-950/20 backdrop-blur-xl shadow-[0_25px_60px_rgba(0,0,0,.35)]">
+        <div
+          className={`hidden lg:block rounded-2xl overflow-hidden backdrop-blur shadow-glass ${
+            isDark ? "bg-slate-900/30 border border-slate-700/30" : "bg-white border border-slate-200"
+          }`}
+        >
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className={isDark ? "bg-slate-900/60" : "bg-slate-200"}>
@@ -348,7 +357,7 @@ export default function DashboardPage() {
                   </tr>
                 ) : (
                   filteredApps.map((app) => (
-                    <tr key={app.id} className="border-t border-slate-700/15 transition-colors hover:bg-slate-900/40">
+                    <tr key={app.id} className={isDark ? "border-t border-slate-700/20" : "border-t border-slate-200"}>
                       <td className="px-4 py-3">{app.company}</td>
                       <td className="px-4 py-3">{app.position}</td>
                       <td className="px-4 py-3">{app.applied_at}</td>
@@ -360,7 +369,9 @@ export default function DashboardPage() {
                       <td className="px-4 py-3 flex gap-2">
                         <button
                           onClick={() => openEdit(app)}
-                          className="px-2 py-1 text-xs rounded-md bg-slate-700/50 hover:bg-slate-700 transition-transform duration-200 hover:-translate-y-0.5 active:scale-95"
+                          className={`px-2 py-1 text-xs rounded-md transition-transform duration-200 hover:-translate-y-0.5 active:scale-95 ${
+                            isDark ? "bg-slate-700/50 hover:bg-slate-700" : "bg-slate-200 text-slate-900 hover:bg-slate-300"
+                          }`}
                         >
                           Edit
                         </button>
@@ -381,13 +392,14 @@ export default function DashboardPage() {
 
         <div className="flex flex-col gap-3 lg:hidden">
           {filteredApps.length === 0 ? (
-            <div className="text-center py-8 text-sm text-slate-400">No applications.</div>
+            <div className="text-center py-6 text-slate-400 text-sm">No applications.</div>
           ) : (
             filteredApps.map((app) => (
               <div
                 key={app.id}
-                className={(isDark ? "bg-slate-900/50 " : "bg-white ") +
-                  "rounded-2xl border border-slate-700/20 p-4 shadow-[0_10px_35px_rgba(0,0,0,.25)] space-y-3 backdrop-blur transition-transform duration-200 hover:-translate-y-1"}
+                className={`backdrop-blur rounded-3xl p-4 shadow-glass space-y-3 transition-transform duration-200 hover:-translate-y-1 ${
+                  isDark ? "bg-slate-900/40 border border-slate-700/30" : "bg-white border border-slate-200"
+                }`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -398,11 +410,13 @@ export default function DashboardPage() {
                   </div>
                   <span className={statusChip(app.status)}>{app.status}</span>
                 </div>
-                {app.notes ? <p className="text-xs opacity-85 leading-relaxed">{app.notes}</p> : null}
+                {app.notes ? <p className="text-xs opacity-80 leading-relaxed">{app.notes}</p> : null}
                 <div className="flex gap-2">
                   <button
                     onClick={() => openEdit(app)}
-                    className="px-3 py-1 text-xs rounded-md bg-slate-700/50 transition-transform duration-200 hover:-translate-y-0.5 active:scale-95"
+                    className={`px-3 py-1 text-xs rounded-md transition-transform duration-200 hover:-translate-y-0.5 active:scale-95 ${
+                      isDark ? "bg-slate-700/50" : "bg-slate-200 text-slate-900"
+                    }`}
                   >
                     Edit
                   </button>
@@ -422,54 +436,49 @@ export default function DashboardPage() {
       {showModal ? (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4">
           <div
-            className={(isDark ? "bg-slate-950 " : "bg-white ") +
-              "rounded-xl p-4 w-full max-w-md border border-slate-600/30 shadow-[0_25px_60px_rgba(0,0,0,.35)] transition-transform duration-200 animate-in fade-in zoom-in"}
+            className={`rounded-2xl p-4 w-full max-w-md shadow-glass border ${
+              isDark ? "bg-slate-950 border-slate-700/50" : "bg-white border-slate-200"
+            }`}
           >
-            <h2 className="text-lg font-semibold mb-1">{editingId ? "Edit Application" : "New Application"}</h2>
-            <p className="text-xs opacity-60 mb-3">Isi data lamaranmu ya.</p>
+            <h2 className="text-lg font-semibold mb-2">{editingId ? "Edit Application" : "New Application"}</h2>
             <div className="space-y-2 mb-4">
               <input
                 value={form.company}
                 onChange={(e) => setForm((p) => ({ ...p, company: e.target.value }))}
                 placeholder="Company"
-                className={(isDark ? "bg-slate-900/40 border-slate-700/40 " : "bg-slate-100 border-slate-200 ") +
-                  "w-full px-3 py-2 rounded-md border text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/30"}
+                className={fieldClass}
               />
               <input
                 value={form.position}
                 onChange={(e) => setForm((p) => ({ ...p, position: e.target.value }))}
                 placeholder="Position"
-                className={(isDark ? "bg-slate-900/40 border-slate-700/40 " : "bg-slate-100 border-slate-200 ") +
-                  "w-full px-3 py-2 rounded-md border text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/30"}
+                className={fieldClass}
               />
               <input
                 type="date"
                 value={form.applied_at}
                 onChange={(e) => setForm((p) => ({ ...p, applied_at: e.target.value }))}
-                className={(isDark ? "bg-slate-900/40 border-slate-700/40 " : "bg-slate-100 border-slate-200 ") +
-                  "w-full px-3 py-2 rounded-md border text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/30"}
+                className={fieldClass}
               />
               <select
                 value={form.status}
                 onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as StatusType }))}
-                className={(isDark ? "bg-slate-900/40 border-slate-700/40 " : "bg-slate-100 border-slate-200 ") +
-                  "w-full px-3 py-2 rounded-md border text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/30"}
+                className={`${fieldClass} cursor-pointer`}
               >
-                {ALL_STATUSES.filter((s) => s.value !== "all").map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
+                {STATUS_FILTERS.filter((x) => x.value !== "all").map((x) => (
+                  <option key={x.value} value={x.value}>
+                    {x.label}
                   </option>
                 ))}
               </select>
               <select
                 value={form.source}
                 onChange={(e) => setForm((p) => ({ ...p, source: e.target.value as SourceType }))}
-                className={(isDark ? "bg-slate-900/40 border-slate-700/40 " : "bg-slate-100 border-slate-200 ") +
-                  "w-full px-3 py-2 rounded-md border text-sm outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/30"}
+                className={`${fieldClass} cursor-pointer`}
               >
-                {ALL_SOURCES.map((s) => (
-                  <option key={s.value} value={s.value}>
-                    {s.label}
+                {SOURCES.map((x) => (
+                  <option key={x.value} value={x.value}>
+                    {x.label}
                   </option>
                 ))}
               </select>
@@ -477,21 +486,14 @@ export default function DashboardPage() {
                 value={form.notes}
                 onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
                 placeholder="Notes"
-                className={(isDark ? "bg-slate-900/40 border-slate-700/40 " : "bg-slate-100 border-slate-200 ") +
-                  "w-full px-3 py-2 rounded-md border text-sm outline-none min-h-[70px] transition focus:border-blue-400 focus:ring-2 focus:ring-blue-400/30"}
+                className={textAreaClass}
               />
             </div>
             <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setShowModal(false)}
-                className="px-4 py-2 rounded-md border border-slate-600/30 text-sm transition-transform duration-200 hover:-translate-y-0.5 active:scale-95"
-              >
+              <button onClick={() => setShowModal(false)} className="px-4 py-2 rounded-md border border-slate-600/40 text-sm">
                 Cancel
               </button>
-              <button
-                onClick={saveApp}
-                className="px-4 py-2 rounded-md bg-blue-500 text-sm transition-transform duration-200 hover:-translate-y-0.5 active:scale-95"
-              >
+              <button onClick={saveApp} className="px-4 py-2 rounded-md bg-blue-500 text-sm">
                 {editingId ? "Save" : "Create"}
               </button>
             </div>
@@ -502,7 +504,7 @@ export default function DashboardPage() {
   );
 }
 
-function AnalyticCard({
+function AnalyticsCard({
   dark,
   label,
   value,
@@ -517,23 +519,27 @@ function AnalyticCard({
 }) {
   return (
     <div
-      className={(dark
-        ? "bg-gradient-to-br from-slate-900/70 via-slate-900/10 to-slate-800/20 border-slate-700/60 "
-        : "bg-white/80 border-slate-200/80 ") +
-        "rounded-3xl border p-4 shadow-[0_25px_60px_rgba(15,23,42,.35)] backdrop-blur-xl transition-transform duration-200 hover:-translate-y-1 hover:shadow-[0_25px_80px_rgba(59,130,246,.35)]"}
+      className={
+        (dark
+          ? "bg-slate-900/50 border border-slate-700/40 "
+          : "bg-white/80 border border-slate-200 ") +
+        "rounded-3xl p-4 backdrop-blur shadow-glass transition-transform duration-200 hover:-translate-y-1 active:scale-95"
+      }
     >
-      <div className="text-xs opacity-75">{label}</div>
+      <div className="text-xs opacity-70">{label}</div>
       <div className={"text-2xl font-bold mt-2 " + (accent || "")}>{value}</div>
-      <div className="text-[10px] opacity-60 mt-1">{desc}</div>
+      <div className="text-[10px] opacity-50 mt-1">{desc}</div>
     </div>
   );
 }
 
-function TinySourceCard({ dark, label, value }: { dark: boolean; label: string; value: number }) {
+function SourceCard({ dark, label, value }: { dark: boolean; label: string; value: number }) {
   return (
     <div
-      className={(dark ? "bg-slate-900/40 border-slate-700/40 " : "bg-white border-slate-200/80 ") +
-        "rounded-2xl border p-3 flex items-center justify-between backdrop-blur transition-transform duration-200 hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(59,130,246,.2)]"}
+      className={
+        (dark ? "bg-slate-900/40 border-slate-800/40 " : "bg-white border-slate-200 ") +
+        "rounded-2xl p-3 border flex items-center justify-between transition-transform duration-200 hover:-translate-y-1 active:scale-95"
+      }
     >
       <div className="text-xs opacity-70">{label}</div>
       <div className="text-base font-semibold">{value}</div>
@@ -542,17 +548,17 @@ function TinySourceCard({ dark, label, value }: { dark: boolean; label: string; 
 }
 
 function statusClass(status: string) {
-  if (status === "hired") return "inline-flex px-3 py-1 text-xs rounded-full bg-emerald-500/15 text-emerald-300 capitalize";
-  if (status === "rejected") return "inline-flex px-3 py-1 text-xs rounded-full bg-red-500/15 text-red-300 capitalize";
-  if (status === "interview-user") return "inline-flex px-3 py-1 text-xs rounded-full bg-blue-500/15 text-blue-300 capitalize";
-  if (status === "screening") return "inline-flex px-3 py-1 text-xs rounded-full bg-sky-500/15 text-sky-300 capitalize";
-  if (status === "psikotes") return "inline-flex px-3 py-1 text-xs rounded-full bg-purple-500/15 text-purple-300 capitalize";
-  if (status === "training") return "inline-flex px-3 py-1 text-xs rounded-full bg-lime-500/15 text-lime-300 capitalize";
-  if (status === "tes-online") return "inline-flex px-3 py-1 text-xs rounded-full bg-cyan-500/15 text-cyan-300 capitalize";
-  if (status === "mcu") return "inline-flex px-3 py-1 text-xs rounded-full bg-pink-500/15 text-pink-300 capitalize";
-  if (status === "tes-kesehatan") return "inline-flex px-3 py-1 text-xs rounded-full bg-emerald-500/15 text-emerald-200 capitalize";
-  if (status === "offering") return "inline-flex px-3 py-1 text-xs rounded-full bg-orange-500/15 text-orange-300 capitalize";
-  return "inline-flex px-3 py-1 text-xs rounded-full bg-amber-500/15 text-amber-200 capitalize";
+  if (status === "hired") return "badge bg-emerald-500/20 text-emerald-200 capitalize";
+  if (status === "rejected") return "badge bg-red-500/20 text-red-200 capitalize";
+  if (status === "interview-user") return "badge bg-blue-500/20 text-blue-200 capitalize";
+  if (status === "screening") return "badge bg-sky-500/20 text-sky-200 capitalize";
+  if (status === "psikotes") return "badge bg-purple-500/20 text-purple-200 capitalize";
+  if (status === "tes-online") return "badge bg-cyan-500/20 text-cyan-200 capitalize";
+  if (status === "training") return "badge bg-lime-500/20 text-lime-200 capitalize";
+  if (status === "mcu") return "badge bg-pink-500/20 text-pink-200 capitalize";
+  if (status === "tes-kesehatan") return "badge bg-emerald-500/20 text-emerald-200 capitalize";
+  if (status === "offering") return "badge bg-orange-500/20 text-orange-200 capitalize";
+  return "badge bg-amber-500/20 text-amber-200 capitalize";
 }
 
 function statusChip(status: string) {
@@ -561,8 +567,8 @@ function statusChip(status: string) {
   if (status === "interview-user") return "px-3 py-1 rounded-full bg-blue-200 text-blue-900 text-[10px] capitalize";
   if (status === "screening") return "px-3 py-1 rounded-full bg-sky-200 text-sky-900 text-[10px] capitalize";
   if (status === "psikotes") return "px-3 py-1 rounded-full bg-purple-200 text-purple-900 text-[10px] capitalize";
-  if (status === "training") return "px-3 py-1 rounded-full bg-lime-200 text-lime-900 text-[10px] capitalize";
   if (status === "tes-online") return "px-3 py-1 rounded-full bg-cyan-200 text-cyan-900 text-[10px] capitalize";
+  if (status === "training") return "px-3 py-1 rounded-full bg-lime-200 text-lime-900 text-[10px] capitalize";
   if (status === "mcu") return "px-3 py-1 rounded-full bg-pink-200 text-pink-900 text-[10px] capitalize";
   if (status === "tes-kesehatan") return "px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-[10px] capitalize";
   if (status === "offering") return "px-3 py-1 rounded-full bg-orange-200 text-orange-900 text-[10px] capitalize";
@@ -570,6 +576,6 @@ function statusChip(status: string) {
 }
 
 function sourceLabel(src: SourceType) {
-  const found = ALL_SOURCES.find((s) => s.value === src);
-  return found ? found.label : src;
+  const f = SOURCES.find((s) => s.value === src);
+  return f ? f.label : src;
 }
