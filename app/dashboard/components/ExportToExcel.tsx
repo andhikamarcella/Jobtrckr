@@ -1,45 +1,37 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 
-import type { ApplicationRecord } from './ApplicationTable';
-import { createApplicationsWorkbookBlob } from '@/lib/exportToExcel';
+import {
+  createApplicationsWorkbookBlob,
+  type ApplicationRecord
+} from "@/lib/exportToExcel";
 
-interface ExportToExcelProps {
-  data: ApplicationRecord[];
-}
+type ExportToExcelProps = {
+  applications: ApplicationRecord[];
+};
 
-export function ExportToExcel({ data }: ExportToExcelProps) {
-  const [isExporting, setIsExporting] = useState(false);
+export function ExportToExcel({ applications }: ExportToExcelProps) {
+  const [downloading, setDownloading] = useState(false);
 
   const handleExport = async () => {
-    if (!data.length) {
-      alert('Tidak ada data untuk diekspor.');
-      return;
-    }
-
-    setIsExporting(true);
-
+    setDownloading(true);
     try {
-      const { saveAs } = await import('file-saver');
-      const blob = createApplicationsWorkbookBlob(data);
-      saveAs(blob, 'jobtrackr-applications.xlsx');
-    } catch (error) {
-      console.error('Failed to export applications:', error);
-      alert('Gagal mengekspor data. Silakan coba lagi.');
+      const { saveAs } = await import("file-saver");
+      const blob = createApplicationsWorkbookBlob(applications);
+      saveAs(blob, "jobtrackr-applications.xlsx");
     } finally {
-      setIsExporting(false);
+      setDownloading(false);
     }
   };
 
   return (
     <button
-      type="button"
       onClick={handleExport}
-      disabled={isExporting}
-      className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:border-blue-500 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+      disabled={downloading || applications.length === 0}
+      className="px-4 py-2 rounded-md bg-emerald-600 text-white text-sm hover:bg-emerald-700 disabled:bg-gray-400"
     >
-      {isExporting ? 'Exporting…' : 'Export to Excel'}
+      {downloading ? "Exporting..." : "Export to Excel"}
     </button>
   );
 }
