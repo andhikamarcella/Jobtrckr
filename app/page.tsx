@@ -10,17 +10,33 @@ import {
   useToast
 } from "@chakra-ui/react";
 
-const PROD_REDIRECT = "https://jobtrckr.vercel.app/auth/callback";
-const DEV_REDIRECT = "http://localhost:3000/auth/callback";
+const FALLBACK_SITE = "https://jobtrckr.vercel.app";
+const LOCAL_REDIRECT = "http://localhost:3000/auth/callback";
+
+function resolveSiteUrl() {
+  const envSite = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  return envSite && envSite.length > 0 ? envSite : FALLBACK_SITE;
+}
+
+function resolveRedirectUrl() {
+  const siteUrl = resolveSiteUrl();
+  const runtimeOrigin =
+    typeof window !== "undefined" && window.location.origin
+      ? window.location.origin
+      : siteUrl;
+
+  if (runtimeOrigin.startsWith("http://localhost")) {
+    return LOCAL_REDIRECT;
+  }
+
+  return `${siteUrl.replace(/\/$/, "")}/auth/callback`;
+}
 
 export default function LoginPage() {
   const toast = useToast();
 
   const handleLogin = async () => {
-    const redirectTo =
-      typeof window !== "undefined" && window.location.hostname === "localhost"
-        ? DEV_REDIRECT
-        : PROD_REDIRECT;
+    const redirectTo = resolveRedirectUrl();
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -45,9 +61,9 @@ export default function LoginPage() {
           JobTrackr
         </Heading>
         <Text color="gray.300" mb={6}>
-          Sign in with Google to view your job applications.
+          Sign in with Google to manage your job applications.
         </Text>
-        <Button onClick={handleLogin} colorScheme="blue" w="full" size="md">
+        <Button colorScheme="blue" w="full" size="md" onClick={handleLogin}>
           Continue with Google
         </Button>
       </Box>
