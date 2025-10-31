@@ -77,6 +77,34 @@ const SOURCE_LABEL_MAP: Record<ApplicationSource, string> = SOURCE_DETAILS.reduc
   {} as Record<ApplicationSource, string>
 );
 
+const STATUS_BADGE_MAP: Record<ApplicationStatus, string> = {
+  waiting: "bg-amber-500/20 text-amber-200",
+  screening: "bg-sky-500/20 text-sky-200",
+  mcu: "bg-pink-500/20 text-pink-200",
+  "interview-user": "bg-blue-500/20 text-blue-200",
+  psikotes: "bg-purple-500/20 text-purple-200",
+  "tes-online": "bg-cyan-500/20 text-cyan-200",
+  training: "bg-lime-500/20 text-lime-200",
+  "tes-kesehatan": "bg-emerald-500/20 text-emerald-200",
+  offering: "bg-orange-500/20 text-orange-200",
+  rejected: "bg-rose-500/20 text-rose-200",
+  hired: "bg-emerald-500/25 text-emerald-200",
+};
+
+const STATUS_PILL_MAP: Record<ApplicationStatus, string> = {
+  waiting: "bg-amber-100 text-amber-900",
+  screening: "bg-sky-100 text-sky-900",
+  mcu: "bg-pink-100 text-pink-900",
+  "interview-user": "bg-blue-100 text-blue-900",
+  psikotes: "bg-purple-100 text-purple-900",
+  "tes-online": "bg-cyan-100 text-cyan-900",
+  training: "bg-lime-100 text-lime-900",
+  "tes-kesehatan": "bg-emerald-100 text-emerald-900",
+  offering: "bg-orange-100 text-orange-900",
+  rejected: "bg-rose-100 text-rose-900",
+  hired: "bg-emerald-200 text-emerald-900",
+};
+
 function normalizeStatus(value: string | null | undefined): ApplicationStatus {
   const slug = (value ?? "waiting").toLowerCase().replace(/\s+/g, "-") as ApplicationStatus;
   return STATUS_ORDER.includes(slug) ? slug : "waiting";
@@ -406,7 +434,7 @@ export default function DashboardClient() {
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-4">
           <div className="min-w-0 flex-1">
             <h1 className="text-2xl font-bold md:text-3xl" aria-live="polite">
-              Hai, {formatOwner(userEmail)}
+              Pemilik • {formatOwner(userEmail)}
             </h1>
             <p className={`text-xs transition-colors ${isDark ? "text-slate-300" : "text-slate-600"}`}>
               Pantau semua lamaran kerja kamu dalam satu dashboard.
@@ -415,26 +443,26 @@ export default function DashboardClient() {
           <div className="flex flex-wrap items-center justify-end gap-3">
             <button
               onClick={() => setIsDark((prev) => !prev)}
-              className={`relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_20px_40px_rgba(99,102,241,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${
+              className={`relative grid h-11 w-11 place-items-center overflow-hidden rounded-full border transition-all duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_20px_40px_rgba(99,102,241,0.35)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${
                 isDark
-                  ? "border-slate-700/60 bg-slate-900/70 text-yellow-200"
-                  : "border-slate-300 bg-white text-slate-700"
+                  ? "border-slate-700/60 bg-slate-900/70 text-slate-100"
+                  : "border-slate-300 bg-white text-slate-900"
               }`}
               aria-label="Toggle theme"
             >
               <span
-                className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 ${
-                  isDark ? "opacity-0" : "opacity-100"
+                className={`absolute inset-0 grid place-items-center transition-all duration-500 ${
+                  isDark ? "opacity-0 scale-75" : "opacity-100 scale-100"
                 }`}
               >
-                <SunIcon className="h-6 w-6" />
+                <SunIcon className="h-5 w-5" />
               </span>
               <span
-                className={`absolute inset-0 flex items-center justify-center transition-opacity duration-500 ${
-                  isDark ? "opacity-100" : "opacity-0"
+                className={`absolute inset-0 grid place-items-center transition-all duration-500 ${
+                  isDark ? "opacity-100 scale-100" : "opacity-0 scale-75"
                 }`}
               >
-                <MoonIcon className="h-6 w-6" />
+                <MoonIcon className="h-5 w-5" />
               </span>
             </button>
             <button
@@ -587,73 +615,107 @@ export default function DashboardClient() {
           className={`${
             isDark
               ? "bg-slate-950/45 border border-slate-800/40"
-              : "bg-white/90 border border-slate-200"
+              : "bg-white/95 border border-slate-200"
           } rounded-4xl shadow-[0_25px_55px_rgba(15,23,42,0.35)] backdrop-blur-xl`}
         >
-          <div
-            className={`hidden md:grid grid-cols-[1.2fr,1.2fr,0.75fr,0.9fr,0.9fr,1.2fr,0.7fr] gap-6 px-8 py-5 text-sm font-semibold uppercase tracking-wide ${
-              isDark ? "text-slate-200" : "text-slate-600"
-            }`}
-          >
-            <div>Company</div>
-            <div>Position</div>
-            <div>Applied</div>
-            <div>Status</div>
-            <div>Source</div>
-            <div>Notes</div>
-            <div className="text-center">Actions</div>
-          </div>
-          <div className="divide-y divide-slate-800/20">
-            {filteredApplications.length === 0 ? (
-              <p className={`px-6 py-8 text-center text-sm ${isDark ? "text-slate-400" : "text-slate-500"}`}>
-                Belum ada data lamaran.
-              </p>
-            ) : (
-              filteredApplications.map((app) => (
-                <div
-                  key={app.id}
-                  className="grid gap-6 px-6 py-5 text-sm md:grid-cols-[1.2fr,1.2fr,0.75fr,0.9fr,0.9fr,1.2fr,0.7fr]"
-                >
-                  <div className={`font-semibold ${isDark ? "text-slate-100" : "text-slate-800"}`}>{app.company}</div>
-                  <div className={isDark ? "text-slate-200" : "text-slate-700"}>{app.position}</div>
-                  <div className={isDark ? "text-slate-300" : "text-slate-600"}>{app.applied_at}</div>
-                  <div>
-                    <span className="inline-flex px-3 py-1 rounded-full bg-slate-800/60 text-xs capitalize text-slate-100">
-                      {STATUS_LABEL_MAP[normalizeStatus(app.status)]}
-                    </span>
-                  </div>
-                  <div className={isDark ? "text-slate-200" : "text-slate-700"}>
-                    {SOURCE_LABEL_MAP[normalizeSource(app.source)]}
-                  </div>
-                  <div
-                    className={`max-w-md whitespace-pre-line text-sm leading-relaxed ${
-                      isDark ? "text-slate-300" : "text-slate-600"
-                    } md:line-clamp-2`}
-                    title={app.notes ?? ""}
-                  >
-                    {app.notes?.trim() ? app.notes : "—"}
-                  </div>
-                  <div className="flex items-center justify-start gap-2 md:justify-center">
-                    <button
-                      onClick={() => openEdit(app)}
-                      className={`rounded-full px-3 py-1 text-xs font-semibold transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${
-                        isDark
-                          ? "bg-slate-700/60 text-slate-100 hover:bg-slate-600/70"
-                          : "bg-slate-200 text-slate-800 hover:bg-slate-300"
+          <div className="overflow-x-auto">
+            <table className="min-w-full table-fixed border-collapse text-sm">
+              <thead
+                className={`${
+                  isDark
+                    ? "bg-slate-900/70 text-slate-200"
+                    : "bg-slate-100 text-slate-600"
+                } uppercase tracking-wide`}
+              >
+                <tr>
+                  <th scope="col" className="px-6 py-4 text-left font-semibold">
+                    Company
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left font-semibold">
+                    Position
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left font-semibold">
+                    Applied
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left font-semibold">
+                    Status
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left font-semibold">
+                    Source
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-left font-semibold">
+                    Notes
+                  </th>
+                  <th scope="col" className="px-6 py-4 text-center font-semibold">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className={isDark ? "divide-y divide-slate-800/40" : "divide-y divide-slate-200"}>
+                {filteredApplications.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className={`px-6 py-8 text-center text-sm ${
+                        isDark ? "text-slate-400" : "text-slate-500"
                       }`}
                     >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(app.id)}
-                      className="rounded-full bg-rose-500 px-3 py-1 text-xs font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70"
+                      Belum ada data lamaran.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredApplications.map((app) => (
+                    <tr
+                      key={app.id}
+                      className={`transition-colors duration-300 ${
+                        isDark ? "hover:bg-slate-900/40" : "hover:bg-slate-100"
+                      }`}
                     >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
+                      <td className={`px-6 py-4 font-semibold ${isDark ? "text-slate-100" : "text-slate-800"}`}>
+                        {app.company}
+                      </td>
+                      <td className={isDark ? "px-6 py-4 text-slate-200" : "px-6 py-4 text-slate-700"}>{app.position}</td>
+                      <td className={isDark ? "px-6 py-4 text-slate-300" : "px-6 py-4 text-slate-600"}>{app.applied_at}</td>
+                      <td className="px-6 py-4">
+                        <span className={`${statusClass(normalizeStatus(app.status))} text-xs`}>
+                          {STATUS_LABEL_MAP[normalizeStatus(app.status)]}
+                        </span>
+                      </td>
+                      <td className={isDark ? "px-6 py-4 text-slate-200" : "px-6 py-4 text-slate-700"}>
+                        {SOURCE_LABEL_MAP[normalizeSource(app.source)]}
+                      </td>
+                      <td
+                        className={`px-6 py-4 align-top text-sm ${
+                          isDark ? "text-slate-300" : "text-slate-600"
+                        }`}
+                      >
+                        {app.notes?.trim() ? app.notes : "—"}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-wrap items-center justify-center gap-2">
+                          <button
+                            onClick={() => openEdit(app)}
+                            className={`rounded-full px-3 py-1 text-xs font-semibold transition-all duration-300 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400/70 ${
+                              isDark
+                                ? "bg-slate-700/60 text-slate-100 hover:bg-slate-600/70"
+                                : "bg-slate-200 text-slate-800 hover:bg-slate-300"
+                            }`}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(app.id)}
+                            className="rounded-full bg-rose-500 px-3 py-1 text-xs font-semibold text-white transition-all duration-300 hover:-translate-y-0.5 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/70"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </section>
 
@@ -677,7 +739,7 @@ export default function DashboardClient() {
                     <p className="text-[10px] opacity-60 mt-2">Applied: {app.applied_at}</p>
                     <p className="text-[10px] opacity-60">Source: {SOURCE_LABEL_MAP[normalizeSource(app.source)]}</p>
                   </div>
-                  <span className="rounded-full bg-indigo-500/15 px-3 py-1 text-[10px] font-semibold capitalize text-indigo-200">
+                  <span className={statusChip(normalizeStatus(app.status))}>
                     {STATUS_LABEL_MAP[normalizeStatus(app.status)]}
                   </span>
                 </div>
@@ -898,6 +960,16 @@ type FilterPillProps = {
   onClick: () => void;
   isDark: boolean;
 };
+
+function statusClass(status: ApplicationStatus): string {
+  return `badge ${STATUS_BADGE_MAP[status] ?? "bg-slate-700/40 text-slate-100"}`;
+}
+
+function statusChip(status: ApplicationStatus): string {
+  return `inline-flex items-center rounded-full px-3 py-1 text-[10px] font-semibold capitalize ${
+    STATUS_PILL_MAP[status] ?? "bg-slate-200 text-slate-800"
+  }`;
+}
 
 function FilterPill({ label, active, onClick, isDark }: FilterPillProps) {
   return (
