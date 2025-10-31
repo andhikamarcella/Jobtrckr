@@ -32,7 +32,6 @@ export default function DashboardScreen() {
     notes: "",
   });
 
-  // load user + data
   useEffect(() => {
     const load = async () => {
       const { data, error } = await supabase.auth.getUser();
@@ -71,7 +70,6 @@ export default function DashboardScreen() {
   const isDark = theme === "dark";
   const pageBg = isDark ? "#020617" : "#edf2ff";
   const textColor = isDark ? "#ffffff" : "#0f172a";
-  const cardBg = isDark ? "rgba(5,12,27,1)" : "#ffffff";
   const subText = isDark ? "rgba(255,255,255,.65)" : "rgba(15,23,42,.6)";
   const borderCol = isDark ? "rgba(148,163,184,.14)" : "rgba(15,23,42,.08)";
 
@@ -113,19 +111,12 @@ export default function DashboardScreen() {
     };
 
     if (editingId) {
-      const { data, error } = await supabase
-        .from("applications")
-        .update(payload)
-        .eq("id", editingId)
-        .select();
+      const { data, error } = await supabase.from("applications").update(payload).eq("id", editingId).select();
       if (!error && data) {
         setApps((prev) => prev.map((p) => (p.id === editingId ? (data[0] as any) : p)));
       }
     } else {
-      const { data, error } = await supabase
-        .from("applications")
-        .insert(payload)
-        .select();
+      const { data, error } = await supabase.from("applications").insert(payload).select();
       if (!error && data) {
         setApps((prev) => [data[0] as any, ...prev]);
       }
@@ -177,13 +168,12 @@ export default function DashboardScreen() {
 
   return (
     <div style={{ minHeight: "100vh", background: pageBg, color: textColor }}>
-      {/* sticky top */}
       <div
         style={{
           position: "sticky",
           top: 0,
           zIndex: 20,
-          background: isDark ? "rgba(2,6,23,.9)" : "rgba(237,242,255,.9)",
+          background: isDark ? "rgba(2,6,23,.95)" : "rgba(237,242,255,.9)",
           backdropFilter: "blur(14px)",
           borderBottom: `1px solid ${borderCol}`,
         }}
@@ -192,26 +182,35 @@ export default function DashboardScreen() {
           style={{
             display: "flex",
             gap: "1rem",
-            justifyContent: "space-between",
             alignItems: "center",
+            justifyContent: "space-between",
             padding: "1rem 1.25rem",
+            flexWrap: "wrap",
           }}
         >
-          <div style={{ minWidth: 0 }}>
+          <div style={{ minWidth: "160px", flex: "1 1 auto" }}>
             <h1
               style={{
-                fontSize: "1.7rem",
+                fontSize: "1.5rem",
                 fontWeight: 700,
-                whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
+                whiteSpace: "nowrap",
+                maxWidth: "100%",
               }}
             >
               Hi, {userEmail}
             </h1>
-            <p style={{ color: subText, fontSize: ".78rem" }}>Pantau lamaran kamu di sini.</p>
+            <p style={{ color: subText, fontSize: ".75rem" }}>Pantau lamaran kamu di sini.</p>
           </div>
-          <div style={{ display: "flex", gap: ".6rem" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: ".6rem",
+              flexWrap: "wrap",
+              justifyContent: "flex-end",
+            }}
+          >
             <button onClick={() => setTheme((p) => (p === "dark" ? "light" : "dark"))} style={btnGhost(isDark)}>
               {isDark ? "Light" : "Dark"}
             </button>
@@ -228,9 +227,7 @@ export default function DashboardScreen() {
         </div>
       </div>
 
-      {/* content */}
       <div style={{ padding: "1.25rem", maxWidth: "1200px", margin: "0 auto" }}>
-        {/* analytics */}
         <div style={analyticsWrap}>
           <AnalyticsCard
             title="Total Applications"
@@ -262,7 +259,6 @@ export default function DashboardScreen() {
           />
         </div>
 
-        {/* filter */}
         <div style={{ display: "flex", gap: ".5rem", marginTop: "1.2rem", marginBottom: ".9rem", flexWrap: "wrap" }}>
           {["all", "waiting", "interview", "rejected", "hired"].map((st) => (
             <button
@@ -275,7 +271,6 @@ export default function DashboardScreen() {
           ))}
         </div>
 
-        {/* desktop table */}
         <div style={tableContainer}>
           <table style={tableStyle(isDark)}>
             <thead>
@@ -322,22 +317,19 @@ export default function DashboardScreen() {
           </table>
         </div>
 
-        {/* mobile cards */}
         <div style={mobileList} className="mobile-visible">
           {filteredApps.length === 0 ? (
             <div style={{ textAlign: "center", color: subText, padding: "1rem" }}>No applications.</div>
           ) : (
             filteredApps.map((app) => (
-              <div key={app.id} style={mobileCard(cardBg, borderCol)}>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: "0.6rem" }}>
-                  <div>
+              <div key={app.id} style={mobileCard(isDark, borderCol)}>
+                <div style={{ display: "flex", gap: ".5rem", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 700, fontSize: "1rem" }}>{app.company}</div>
                     <div style={{ color: subText, fontSize: ".85rem" }}>{app.position}</div>
-                    <div style={{ color: subText, fontSize: ".7rem", marginTop: ".3rem" }}>
-                      Applied: {app.applied_at}
-                    </div>
+                    <div style={{ color: subText, fontSize: ".7rem", marginTop: ".3rem" }}>Applied: {app.applied_at}</div>
                   </div>
-                  <span style={badge(app.status)}>{app.status}</span>
+                  <span style={statusPill(app.status)}>{app.status}</span>
                 </div>
                 {app.notes ? <p style={{ marginTop: ".6rem", lineHeight: 1.4 }}>{app.notes}</p> : null}
                 <div style={{ display: "flex", gap: ".5rem", marginTop: ".7rem" }}>
@@ -354,18 +346,11 @@ export default function DashboardScreen() {
         </div>
       </div>
 
-      {/* modal */}
       {showForm ? (
         <div style={overlay}>
           <div style={modal(isDark)}>
             <h2 style={{ marginBottom: ".6rem", fontSize: "1rem" }}>{editingId ? "Edit Application" : "New Application"}</h2>
-            <p
-              style={{
-                color: isDark ? "rgba(255,255,255,.4)" : "rgba(15,23,42,.5)",
-                fontSize: ".72rem",
-                marginBottom: ".6rem",
-              }}
-            >
+            <p style={{ color: isDark ? "rgba(255,255,255,.4)" : "rgba(15,23,42,.5)", fontSize: ".72rem", marginBottom: ".6rem" }}>
               Isi data lamaran kerja kamu.
             </p>
             <input
@@ -433,7 +418,6 @@ export default function DashboardScreen() {
   );
 }
 
-// sub components + styles
 function AnalyticsCard({
   title,
   value,
@@ -454,7 +438,7 @@ function AnalyticsCard({
         border: isDark ? "1px solid rgba(148,163,184,.15)" : "1px solid rgba(15,23,42,.04)",
         borderRadius: "1rem",
         padding: "1rem",
-        boxShadow: `0 10px 35px rgba(0,0,0,.2), 0 0 20px ${glowColor}22`,
+        boxShadow: `0 10px 35px rgba(0,0,0,.15), 0 0 20px ${glowColor}10`,
       }}
     >
       <div style={{ fontSize: ".7rem", color: isDark ? "rgba(255,255,255,.5)" : "rgba(15,23,42,.5)" }}>{title}</div>
@@ -480,7 +464,7 @@ const btnPrimary: React.CSSProperties = {
   color: "white",
   cursor: "pointer",
   fontWeight: 500,
-  boxShadow: "0 0 15px rgba(99,102,241,.45)",
+  boxShadow: "0 0 15px rgba(99,102,241,.4)",
 };
 
 const btnGreen = (dark: boolean): React.CSSProperties => ({
@@ -525,7 +509,7 @@ const tableContainer: React.CSSProperties = {
   overflowX: "auto",
   borderRadius: "1rem",
   border: "1px solid rgba(148,163,184,.08)",
-  background: "rgba(5,12,27,.5)",
+  background: "rgba(5,12,27,.3)",
   display: "block",
 };
 
@@ -575,6 +559,31 @@ const badge = (status: string): React.CSSProperties => {
   }
 };
 
+const statusPill = (status: string): React.CSSProperties => {
+  const base: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: ".25rem .75rem",
+    borderRadius: "9999px",
+    fontSize: ".65rem",
+    textTransform: "capitalize",
+    fontWeight: 500,
+  };
+  switch (status) {
+    case "hired":
+      return { ...base, background: "rgba(34,197,94,.15)", color: "#bbf7d0", border: "1px solid rgba(34,197,94,.35)" };
+    case "rejected":
+      return { ...base, background: "rgba(248,113,113,.15)", color: "#fee2e2", border: "1px solid rgba(248,113,113,.35)" };
+    case "waiting":
+      return { ...base, background: "rgba(250,204,21,.15)", color: "#fde68a", border: "1px solid rgba(250,204,21,.4)" };
+    case "interview":
+      return { ...base, background: "rgba(59,130,246,.15)", color: "#bfdbfe", border: "1px solid rgba(59,130,246,.4)" };
+    default:
+      return base;
+  }
+};
+
 const smallBtn = (dark: boolean): React.CSSProperties => ({
   background: dark ? "rgba(15,23,42,.4)" : "rgba(226,232,255,1)",
   border: dark ? "1px solid rgba(148,163,184,.35)" : "1px solid rgba(15,23,42,.05)",
@@ -601,8 +610,8 @@ const mobileList: React.CSSProperties = {
   marginTop: "1rem",
 };
 
-const mobileCard = (bg: string, border: string): React.CSSProperties => ({
-  background: bg,
+const mobileCard = (dark: boolean, border: string): React.CSSProperties => ({
+  background: dark ? "rgba(5,12,27,1)" : "white",
   border: `1px solid ${border}`,
   borderRadius: "1.2rem",
   padding: ".9rem .9rem 1rem",
