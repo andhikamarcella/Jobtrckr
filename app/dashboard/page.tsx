@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 import { SunIcon, MoonIcon } from "@heroicons/react/24/solid";
 
 type StatusType =
@@ -85,6 +85,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const load = async () => {
+      const supabase = getSupabaseClient();
       const { data, error } = await supabase.auth.getUser();
       if (error || !data?.user) {
         router.replace("/");
@@ -170,6 +171,7 @@ export default function DashboardPage() {
   };
 
   const saveApp = async () => {
+    const supabase = getSupabaseClient();
     const { data } = await supabase.auth.getUser();
     if (!data?.user) return;
     const payload = {
@@ -202,6 +204,7 @@ export default function DashboardPage() {
 
   const deleteApp = async (id: string) => {
     if (!confirm("Hapus lamaran ini?")) return;
+    const supabase = getSupabaseClient();
     const { error } = await supabase.from("applications").delete().eq("id", id);
     if (!error) {
       setApplications((prev) => prev.filter((p) => p.id !== id));
@@ -236,6 +239,7 @@ export default function DashboardPage() {
   };
 
   const logout = async () => {
+    const supabase = getSupabaseClient();
     await supabase.auth.signOut();
     router.replace("/");
   };

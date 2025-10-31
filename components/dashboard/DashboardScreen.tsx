@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 
 type StatusType = "waiting" | "interview" | "rejected" | "hired";
 type ApplicationRecord = {
@@ -34,6 +34,7 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     const load = async () => {
+      const supabase = getSupabaseClient();
       const { data, error } = await supabase.auth.getUser();
       if (error || !data?.user) {
         router.replace("/");
@@ -102,6 +103,7 @@ export default function DashboardScreen() {
   };
 
   const saveApp = async () => {
+    const supabase = getSupabaseClient();
     const { data: userData } = await supabase.auth.getUser();
     if (!userData?.user) return;
 
@@ -137,6 +139,7 @@ export default function DashboardScreen() {
   const deleteApp = async (id: string) => {
     const ok = typeof window === "undefined" ? true : window.confirm("Hapus lamaran ini?");
     if (!ok) return;
+    const supabase = getSupabaseClient();
     const { error } = await supabase.from("applications").delete().eq("id", id);
     if (!error) {
       setApps((prev) => prev.filter((p) => p.id !== id));
@@ -144,6 +147,7 @@ export default function DashboardScreen() {
   };
 
   const logout = async () => {
+    const supabase = getSupabaseClient();
     await supabase.auth.signOut();
     router.replace("/");
   };

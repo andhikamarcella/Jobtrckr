@@ -26,6 +26,9 @@
       ],
       "@/components/*": [
         "app/dashboard/components/*"
+      ],
+      "@heroicons/react/24/solid": [
+        "lib/heroicons-sun-moon"
       ]
     },
     "incremental": true,

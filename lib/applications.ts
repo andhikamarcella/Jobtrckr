@@ -1,10 +1,12 @@
 import type { ApplicationRecord } from "@/components/ApplicationTable";
-import { supabase } from "@/lib/supabaseClient";
+import { getSupabaseClient } from "@/lib/supabaseClient";
 
 export async function fetchApplicationsByStatus(
   userId: string,
   status?: string
 ): Promise<ApplicationRecord[]> {
+  const supabase = getSupabaseClient();
+
   let query = supabase
     .from("applications")
     .select("*")
