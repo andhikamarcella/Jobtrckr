@@ -274,12 +274,20 @@ export default function DashboardPage() {
   };
 
   const baseFieldClass =
-    "w-full px-3 py-2 rounded-2xl text-sm outline-none transition focus:ring-2 focus:ring-blue-500/30 focus:outline-none backdrop-blur";
-  const themeFieldClass = isDark
-    ? "bg-gradient-to-br from-slate-900/70 via-slate-900/40 to-slate-900/10 border border-slate-700/60 text-slate-100"
-    : "bg-gradient-to-br from-white via-slate-100 to-slate-200/70 border border-slate-300 text-slate-900";
-  const fieldClass = `${baseFieldClass} ${themeFieldClass}`;
-  const textAreaClass = `${fieldClass} min-h-[90px]`;
+    "w-full px-4 py-2 rounded-3xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 focus:outline-none";
+  const fieldTone = isDark
+    ? "bg-transparent border border-slate-600/60 text-slate-100 placeholder:text-slate-500"
+    : "bg-white/85 border border-slate-300 text-slate-900 placeholder:text-slate-400";
+  const motionLift = prefersReducedMotion ? "" : "transition-transform duration-300 hover:-translate-y-[1px]";
+  const fieldClass = `${baseFieldClass} ${fieldTone} ${motionLift}`;
+  const textAreaClass = `${fieldClass} min-h-[96px]`;
+  const selectBase =
+    "w-full px-4 py-2 rounded-3xl text-sm outline-none focus:ring-2 focus:ring-blue-500/40 focus:outline-none appearance-none";
+  const selectTone = isDark
+    ? "bg-gradient-to-r from-slate-900/75 via-slate-900/35 to-slate-900/65 border border-slate-600/60 text-slate-100 shadow-[0_18px_45px_rgba(59,130,246,.35)]"
+    : "bg-gradient-to-r from-white via-slate-100 to-slate-200 border border-slate-300 text-slate-900 shadow-[0_22px_45px_rgba(15,23,42,.12)]";
+  const selectClass = `${selectBase} ${selectTone} ${prefersReducedMotion ? "" : "transition-transform duration-300 hover:-translate-y-[1px]"}`;
+  const sourceSelectClass = `${selectClass} ring-1 ring-blue-400/40`;
 
   return (
     <div
@@ -297,8 +305,8 @@ export default function DashboardPage() {
       </a>
       <header
         className={`sticky top-0 z-30 backdrop-blur border-b ${
-          isDark ? "bg-slate-950/80 border-slate-700/30" : "bg-white/80 border-slate-200/60"
-        }`}
+          isDark ? "bg-slate-950/80 border-slate-700/30" : "bg-white/85 border-slate-200/60"
+        } ${prefersReducedMotion ? "" : "transition-colors duration-500"}`}
       >
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center gap-3 justify-between">
           <div className="min-w-0">
@@ -328,7 +336,12 @@ export default function DashboardPage() {
             >
               {loadingExport ? "Export..." : "Export to Excel"}
             </button>
-            <button onClick={openCreate} className="btn-primary">
+            <button
+              onClick={openCreate}
+              className={`btn-primary ${
+                prefersReducedMotion ? "" : "hover:shadow-[0_24px_70px_rgba(99,102,241,.45)]"
+              }`}
+            >
               + Add Application
             </button>
             <button
@@ -336,7 +349,7 @@ export default function DashboardPage() {
               className={
                 isDark
                   ? "btn-secondary"
-                  : "btn-secondary bg-white text-slate-900 border-slate-300 hover:shadow-lg"
+                  : "btn-secondary bg-gradient-to-r from-slate-200/90 via-slate-100/90 to-white text-slate-900 border-slate-300 shadow-[0_15px_40px_rgba(148,163,184,.35)] hover:shadow-[0_22px_55px_rgba(148,163,184,.55)]"
               }
             >
               Logout
@@ -349,17 +362,17 @@ export default function DashboardPage() {
         <p ref={liveRegionRef} className="sr-only" aria-live="polite" />
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <AnalyticsCard dark={isDark} label="Total Applications" value={analytics.total} desc="semua lamaran kamu" prefersReducedMotion={prefersReducedMotion} />
-          <AnalyticsCard dark={isDark} label="Waiting" value={analytics.waiting} desc="menunggu jawaban" accent="text-amber-200" prefersReducedMotion={prefersReducedMotion} />
-          <AnalyticsCard dark={isDark} label="Screening" value={analytics.screening} desc="sedang di-screening" accent="text-sky-200" prefersReducedMotion={prefersReducedMotion} />
-          <AnalyticsCard dark={isDark} label="Interview User" value={analytics.interviewUser} desc="siap interview" accent="text-blue-200" prefersReducedMotion={prefersReducedMotion} />
-          <AnalyticsCard dark={isDark} label="Psikotes" value={analytics.psikotes} desc="uji psikologi" accent="text-purple-200" prefersReducedMotion={prefersReducedMotion} />
-          <AnalyticsCard dark={isDark} label="Tes Online" value={analytics.tesOnline} desc="tes via web" accent="text-cyan-200" prefersReducedMotion={prefersReducedMotion} />
-          <AnalyticsCard dark={isDark} label="Training" value={analytics.training} desc="tahap pelatihan" accent="text-lime-200" prefersReducedMotion={prefersReducedMotion} />
-          <AnalyticsCard dark={isDark} label="MCU" value={analytics.mcu} desc="cek kesehatan awal" accent="text-pink-200" prefersReducedMotion={prefersReducedMotion} />
-          <AnalyticsCard dark={isDark} label="Tes Kesehatan" value={analytics.tesKesehatan} desc="tes ulang" accent="text-emerald-200" prefersReducedMotion={prefersReducedMotion} />
-          <AnalyticsCard dark={isDark} label="Offering" value={analytics.offering} desc="tawaran kerja" accent="text-orange-200" prefersReducedMotion={prefersReducedMotion} />
-          <AnalyticsCard dark={isDark} label="Rejected" value={analytics.rejected} desc="jangan nyerah 🫂" accent="text-red-200" prefersReducedMotion={prefersReducedMotion} />
-          <AnalyticsCard dark={isDark} label="Hired" value={analytics.hired} desc="selamat 🎉" accent="text-green-200" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Waiting" value={analytics.waiting} desc="menunggu jawaban" accent="dark:text-amber-200 text-amber-600" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Screening" value={analytics.screening} desc="sedang di-screening" accent="dark:text-sky-200 text-sky-600" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Interview User" value={analytics.interviewUser} desc="siap interview" accent="dark:text-blue-200 text-blue-600" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Psikotes" value={analytics.psikotes} desc="uji psikologi" accent="dark:text-purple-200 text-purple-600" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Tes Online" value={analytics.tesOnline} desc="tes via web" accent="dark:text-cyan-200 text-cyan-600" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Training" value={analytics.training} desc="tahap pelatihan" accent="dark:text-lime-200 text-lime-600" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="MCU" value={analytics.mcu} desc="cek kesehatan awal" accent="dark:text-pink-200 text-pink-600" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Tes Kesehatan" value={analytics.tesKesehatan} desc="tes ulang" accent="dark:text-emerald-200 text-emerald-600" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Offering" value={analytics.offering} desc="tawaran kerja" accent="dark:text-orange-200 text-orange-600" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Rejected" value={analytics.rejected} desc="jangan nyerah 🫂" accent="dark:text-red-200 text-red-600" prefersReducedMotion={prefersReducedMotion} />
+          <AnalyticsCard dark={isDark} label="Hired" value={analytics.hired} desc="selamat 🎉" accent="dark:text-green-200 text-green-600" prefersReducedMotion={prefersReducedMotion} />
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -436,7 +449,9 @@ export default function DashboardPage() {
                           className={`px-2 py-1 text-xs rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 ${
                             prefersReducedMotion ? "" : "transition-all duration-300 hover:-translate-y-0.5 active:scale-95"
                           } ${
-                            isDark ? "bg-slate-700/50 hover:bg-slate-700" : "bg-slate-200 text-slate-900 hover:bg-slate-300"
+                            isDark
+                              ? "bg-gradient-to-r from-slate-800/70 via-slate-800/40 to-slate-800/70 text-slate-100 shadow-[0_14px_35px_rgba(15,23,42,.45)] hover:shadow-[0_18px_45px_rgba(59,130,246,.35)]"
+                              : "bg-gradient-to-r from-slate-200 via-slate-100 to-white text-slate-900 shadow-[0_14px_30px_rgba(148,163,184,.35)] hover:shadow-[0_20px_45px_rgba(148,163,184,.45)]"
                           }`}
                         >
                           Edit
@@ -487,7 +502,11 @@ export default function DashboardPage() {
                     onClick={() => openEdit(app)}
                     className={`px-3 py-1 text-xs rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 ${
                       prefersReducedMotion ? "" : "transition-all duration-300 hover:-translate-y-0.5 active:scale-95"
-                    } ${isDark ? "bg-slate-700/50" : "bg-slate-200 text-slate-900"}`}
+                    } ${
+                      isDark
+                        ? "bg-gradient-to-r from-slate-800/70 via-slate-800/40 to-slate-800/70 text-slate-100 shadow-[0_14px_35px_rgba(15,23,42,.45)] hover:shadow-[0_18px_45px_rgba(59,130,246,.35)]"
+                        : "bg-gradient-to-r from-slate-200 via-slate-100 to-white text-slate-900 shadow-[0_14px_30px_rgba(148,163,184,.35)] hover:shadow-[0_20px_45px_rgba(148,163,184,.45)]"
+                    }`}
                   >
                     Edit
                   </button>
@@ -545,7 +564,11 @@ export default function DashboardPage() {
                   value={form.position}
                   onChange={(e) => setForm((p) => ({ ...p, position: e.target.value }))}
                   className={fieldClass}
+                  aria-describedby="position-hint"
                 />
+                <p id="position-hint" className="text-xs opacity-60 mt-1">
+                  Jabatan atau role yang ingin kamu isi.
+                </p>
               </div>
               <div>
                 <label htmlFor="applied-at" className="text-sm font-medium block mb-1">
@@ -557,7 +580,11 @@ export default function DashboardPage() {
                   value={form.applied_at}
                   onChange={(e) => setForm((p) => ({ ...p, applied_at: e.target.value }))}
                   className={fieldClass}
+                  aria-describedby="applied-at-hint"
                 />
+                <p id="applied-at-hint" className="text-xs opacity-60 mt-1">
+                  Pilih tanggal saat kamu mengirim lamaran.
+                </p>
               </div>
               <div>
                 <label htmlFor="status" className="text-sm font-medium block mb-1">
@@ -567,7 +594,8 @@ export default function DashboardPage() {
                   id="status"
                   value={form.status}
                   onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as StatusType }))}
-                  className={`${fieldClass} cursor-pointer`}
+                  className={`${selectClass} cursor-pointer`}
+                  aria-describedby="status-hint"
                 >
                   {STATUS_FILTERS.filter((x) => x.value !== "all").map((x) => (
                     <option
@@ -579,6 +607,9 @@ export default function DashboardPage() {
                     </option>
                   ))}
                 </select>
+                <p id="status-hint" className="text-xs opacity-60 mt-1">
+                  Pilih tahapan terbaru proses rekrutmen kamu.
+                </p>
               </div>
               <div>
                 <label htmlFor="source" className="text-sm font-medium block mb-1">
@@ -588,7 +619,8 @@ export default function DashboardPage() {
                   id="source"
                   value={form.source}
                   onChange={(e) => setForm((p) => ({ ...p, source: e.target.value as SourceType }))}
-                  className={`${fieldClass} cursor-pointer`}
+                  className={`${sourceSelectClass} cursor-pointer`}
+                  aria-describedby="source-hint"
                 >
                   {SOURCES.map((x) => (
                     <option
@@ -600,6 +632,9 @@ export default function DashboardPage() {
                     </option>
                   ))}
                 </select>
+                <p id="source-hint" className="text-xs opacity-60 mt-1">
+                  Dari mana kamu menemukan lowongan ini.
+                </p>
               </div>
               <div>
                 <label htmlFor="notes" className="text-sm font-medium block mb-1">
@@ -610,7 +645,11 @@ export default function DashboardPage() {
                   value={form.notes}
                   onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
                   className={textAreaClass}
+                  aria-describedby="notes-hint"
                 />
+                <p id="notes-hint" className="text-xs opacity-60 mt-1">
+                  Catatan penting seputar progres atau hal yang perlu diingat.
+                </p>
               </div>
             </div>
             <div className="flex justify-end gap-2">
@@ -653,9 +692,9 @@ function AnalyticsCard({
         prefersReducedMotion ? "" : "transition-transform duration-500 hover:-translate-y-1 hover:shadow-[0_25px_65px_rgba(59,130,246,.35)] active:scale-95"
       }`}
     >
-      <div className="text-xs opacity-70">{label}</div>
-      <div className={"text-2xl font-bold mt-2 " + (accent || "")}>{value}</div>
-      <div className="text-[10px] opacity-50 mt-1">{desc}</div>
+      <div className="text-xs opacity-75 dark:text-slate-200 text-slate-600">{label}</div>
+      <div className={`text-2xl font-bold mt-2 ${accent || ""}`}>{value}</div>
+      <div className="text-[10px] mt-1 dark:text-slate-400 text-slate-500">{desc}</div>
     </div>
   );
 }
@@ -675,44 +714,64 @@ function SourceCard({
     <div
       className={`${
         dark
-          ? "bg-gradient-to-br from-slate-900/60 via-slate-900/30 to-slate-900/5 border border-slate-800/40"
-          : "bg-gradient-to-br from-white via-slate-100 to-slate-200 border border-slate-200"
+          ? "bg-gradient-to-br from-slate-900/60 via-slate-900/30 to-slate-900/5 border border-slate-800/40 shadow-[0_22px_55px_rgba(59,130,246,.35)]"
+          : "bg-gradient-to-br from-white via-slate-100 to-slate-200 border border-slate-200 shadow-[0_20px_45px_rgba(15,23,42,.1)]"
       } rounded-2xl p-3 border flex items-center justify-between ${
-        prefersReducedMotion ? "" : "transition-all duration-400 hover:-translate-y-1 hover:shadow-[0_20px_45px_rgba(15,23,42,.2)] active:scale-95"
+        prefersReducedMotion ? "" : "transition-all duration-400 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(59,130,246,.25)] active:scale-95"
       }`}
     >
-      <div className="text-xs opacity-70">{label}</div>
-      <div className="text-base font-semibold">{value}</div>
+      <div className="text-xs opacity-70 dark:text-slate-200 text-slate-600">{label}</div>
+      <div className="text-base font-semibold dark:text-white text-slate-900">{value}</div>
     </div>
   );
 }
 
 function statusClass(status: string) {
-  if (status === "hired") return "badge bg-emerald-500/20 text-emerald-200 capitalize";
-  if (status === "rejected") return "badge bg-red-500/20 text-red-200 capitalize";
-  if (status === "interview-user") return "badge bg-blue-500/20 text-blue-200 capitalize";
-  if (status === "screening") return "badge bg-sky-500/20 text-sky-200 capitalize";
-  if (status === "psikotes") return "badge bg-purple-500/20 text-purple-200 capitalize";
-  if (status === "tes-online") return "badge bg-cyan-500/20 text-cyan-200 capitalize";
-  if (status === "training") return "badge bg-lime-500/20 text-lime-200 capitalize";
-  if (status === "mcu") return "badge bg-pink-500/20 text-pink-200 capitalize";
-  if (status === "tes-kesehatan") return "badge bg-emerald-500/20 text-emerald-200 capitalize";
-  if (status === "offering") return "badge bg-orange-500/20 text-orange-200 capitalize";
-  return "badge bg-amber-500/20 text-amber-200 capitalize";
+  if (status === "hired")
+    return "badge bg-emerald-200 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200 capitalize";
+  if (status === "rejected")
+    return "badge bg-red-200 text-red-800 dark:bg-red-500/20 dark:text-red-200 capitalize";
+  if (status === "interview-user")
+    return "badge bg-blue-200 text-blue-800 dark:bg-blue-500/20 dark:text-blue-200 capitalize";
+  if (status === "screening")
+    return "badge bg-sky-200 text-sky-800 dark:bg-sky-500/20 dark:text-sky-200 capitalize";
+  if (status === "psikotes")
+    return "badge bg-purple-200 text-purple-800 dark:bg-purple-500/20 dark:text-purple-200 capitalize";
+  if (status === "tes-online")
+    return "badge bg-cyan-200 text-cyan-800 dark:bg-cyan-500/20 dark:text-cyan-200 capitalize";
+  if (status === "training")
+    return "badge bg-lime-200 text-lime-800 dark:bg-lime-500/20 dark:text-lime-200 capitalize";
+  if (status === "mcu")
+    return "badge bg-pink-200 text-pink-800 dark:bg-pink-500/20 dark:text-pink-200 capitalize";
+  if (status === "tes-kesehatan")
+    return "badge bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200 capitalize";
+  if (status === "offering")
+    return "badge bg-orange-200 text-orange-800 dark:bg-orange-500/20 dark:text-orange-200 capitalize";
+  return "badge bg-amber-200 text-amber-800 dark:bg-amber-500/20 dark:text-amber-200 capitalize";
 }
 
 function statusChip(status: string) {
-  if (status === "hired") return "px-3 py-1 rounded-full bg-emerald-200 text-emerald-900 text-[10px] capitalize";
-  if (status === "rejected") return "px-3 py-1 rounded-full bg-red-200 text-red-900 text-[10px] capitalize";
-  if (status === "interview-user") return "px-3 py-1 rounded-full bg-blue-200 text-blue-900 text-[10px] capitalize";
-  if (status === "screening") return "px-3 py-1 rounded-full bg-sky-200 text-sky-900 text-[10px] capitalize";
-  if (status === "psikotes") return "px-3 py-1 rounded-full bg-purple-200 text-purple-900 text-[10px] capitalize";
-  if (status === "tes-online") return "px-3 py-1 rounded-full bg-cyan-200 text-cyan-900 text-[10px] capitalize";
-  if (status === "training") return "px-3 py-1 rounded-full bg-lime-200 text-lime-900 text-[10px] capitalize";
-  if (status === "mcu") return "px-3 py-1 rounded-full bg-pink-200 text-pink-900 text-[10px] capitalize";
-  if (status === "tes-kesehatan") return "px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-[10px] capitalize";
-  if (status === "offering") return "px-3 py-1 rounded-full bg-orange-200 text-orange-900 text-[10px] capitalize";
-  return "px-3 py-1 rounded-full bg-amber-200 text-amber-900 text-[10px] capitalize";
+  if (status === "hired")
+    return "px-3 py-1 rounded-full bg-emerald-200 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-200 text-[10px] capitalize";
+  if (status === "rejected")
+    return "px-3 py-1 rounded-full bg-red-200 text-red-900 dark:bg-red-500/20 dark:text-red-200 text-[10px] capitalize";
+  if (status === "interview-user")
+    return "px-3 py-1 rounded-full bg-blue-200 text-blue-900 dark:bg-blue-500/20 dark:text-blue-200 text-[10px] capitalize";
+  if (status === "screening")
+    return "px-3 py-1 rounded-full bg-sky-200 text-sky-900 dark:bg-sky-500/20 dark:text-sky-200 text-[10px] capitalize";
+  if (status === "psikotes")
+    return "px-3 py-1 rounded-full bg-purple-200 text-purple-900 dark:bg-purple-500/20 dark:text-purple-200 text-[10px] capitalize";
+  if (status === "tes-online")
+    return "px-3 py-1 rounded-full bg-cyan-200 text-cyan-900 dark:bg-cyan-500/20 dark:text-cyan-200 text-[10px] capitalize";
+  if (status === "training")
+    return "px-3 py-1 rounded-full bg-lime-200 text-lime-900 dark:bg-lime-500/20 dark:text-lime-200 text-[10px] capitalize";
+  if (status === "mcu")
+    return "px-3 py-1 rounded-full bg-pink-200 text-pink-900 dark:bg-pink-500/20 dark:text-pink-200 text-[10px] capitalize";
+  if (status === "tes-kesehatan")
+    return "px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-200 text-[10px] capitalize";
+  if (status === "offering")
+    return "px-3 py-1 rounded-full bg-orange-200 text-orange-900 dark:bg-orange-500/20 dark:text-orange-200 text-[10px] capitalize";
+  return "px-3 py-1 rounded-full bg-amber-200 text-amber-900 dark:bg-amber-500/20 dark:text-amber-200 text-[10px] capitalize";
 }
 
 function sourceLabel(src: SourceType) {
