@@ -1,38 +1,39 @@
 "use client";
 
-import type { ChangeEvent, CSSProperties } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 
+// tipe aplikasi
+type StatusType = "waiting" | "interview" | "rejected" | "hired";
 type ApplicationRecord = {
   id: string;
   user_id: string;
   company: string;
   position: string;
   applied_at: string;
-  status: string;
+  status: StatusType;
   notes?: string | null;
 };
 
 export default function DashboardScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const [userEmail, setUserEmail] = useState("");
   const [apps, setApps] = useState<ApplicationRecord[]>([]);
-  const [filter, setFilter] = useState<
-    "all" | "waiting" | "interview" | "rejected" | "hired"
-  >("all");
+  const [activeFilter, setActiveFilter] = useState<"all" | StatusType>("all");
   const [showForm, setShowForm] = useState(false);
-  const [newApp, setNewApp] = useState({
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [form, setForm] = useState({
     company: "",
     position: "",
-    applied_at: "",
-    status: "waiting",
+    applied_at: new Date().toISOString().slice(0, 10),
+    status: "waiting" as StatusType,
     notes: "",
   });
-  const [isSaving, setIsSaving] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
-  // load data
+  // load user + apps
   useEffect(() => {
     const load = async () => {
       const { data, error } = await supabase.auth.getUser();
@@ -40,184 +41,351 @@ export default function DashboardScreen() {
         router.replace("/");
         return;
       }
-      setEmail(data.user.email ?? "");
+      setUserEmail(data.user.email ?? "");
 
-      const { data: appsData } = await supabase
+      const { data: appsData, error: appsErr } = await supabase
         .from("applications")
         .select("*")
         .eq("user_id", data.user.id)
         .order("applied_at", { ascending: false });
 
-      setApps((appsData || []) as ApplicationRecord[]);
+      if (!appsErr && appsData) {
+        setApps(appsData as ApplicationRecord[]);
+      }
     };
     load();
   }, [router]);
 
-  const filtered =
-    filter === "all" ? apps : apps.filter((a) => a.status === filter);
+  // filter data
+  const filteredApps = useMemo(() => {
+    if (activeFilter === "all") return apps;
+    return apps.filter((a) => a.status === activeFilter);
+  }, [apps, activeFilter]);
 
-  const onLogout = async () => {
+  // analytics
+  const analytics = useMemo(() => {
+    return {
+      total: apps.length,
+      waiting: apps.filter((a) => a.status === "waiting").length,
+      interview: apps.filter((a) => a.status === "interview").length,
+      hired: apps.filter((a) => a.status === "hired").length,
+      rejected: apps.filter((a) => a.status === "rejected").length,
+    };
+  }, [apps]);
+
+  // handlers
+  const openCreate = () => {
+    setEditingId(null);
+    setForm({
+      company: "",
+      position: "",
+      applied_at: new Date().toISOString().slice(0, 10),
+      status: "waiting",
+      notes: "",
+    });
+    setShowForm(true);
+  };
+
+  const openEdit = (app: ApplicationRecord) => {
+    setEditingId(app.id);
+    setForm({
+      company: app.company,
+      position: app.position,
+      applied_at: app.applied_at,
+      status: app.status,
+      notes: app.notes || "",
+    });
+    setShowForm(true);
+  };
+
+  const saveApplication = async () => {
+    const { data: userData } = await supabase.auth.getUser();
+    if (!userData?.user) {
+      router.replace("/");
+      return;
+    }
+
+    const payload = {
+      user_id: userData.user.id,
+      company: form.company,
+      position: form.position,
+      applied_at: form.applied_at,
+      status: form.status,
+      notes: form.notes,
+    };
+
+    // update
+    if (editingId) {
+      const { data, error } = await supabase
+        .from("applications")
+        .update(payload)
+        .eq("id", editingId)
+        .select();
+      if (!error && data) {
+        setApps((prev) => prev.map((p) => (p.id === editingId ? (data[0] as any) : p)));
+      }
+    } else {
+      // create
+      const { data, error } = await supabase.from("applications").insert(payload).select();
+      if (!error && data) {
+        setApps((prev) => [data[0] as any, ...prev]);
+      }
+    }
+
+    setShowForm(false);
+    setEditingId(null);
+  };
+
+  const deleteApplication = async (id: string) => {
+    const ok = typeof window === "undefined" ? true : window.confirm("Hapus lamaran ini?");
+    if (!ok) return;
+    const { error } = await supabase.from("applications").delete().eq("id", id);
+    if (!error) {
+      setApps((prev) => prev.filter((p) => p.id !== id));
+    }
+  };
+
+  const logout = async () => {
     await supabase.auth.signOut();
     router.replace("/");
   };
 
-  const onExport = () => {
-    // masih dummy supaya gak perlu file-saver
-    console.log("export clicked");
-  };
-
-  const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>,
-  ) => {
-    setNewApp({ ...newApp, [e.target.name]: e.target.value });
-  };
-
-  const createApplication = async () => {
-    setIsSaving(true);
-    const { data: user } = await supabase.auth.getUser();
-    if (!user?.user) {
-      setIsSaving(false);
-      return;
+  const exportExcel = async () => {
+    setExporting(true);
+    try {
+      const rows = [
+        ["Company", "Position", "Applied At", "Status", "Notes"],
+        ...apps.map((a) => [
+          a.company,
+          a.position,
+          a.applied_at,
+          a.status,
+          (a.notes || "").replace(/\n/g, " "),
+        ]),
+      ];
+      const csv = rows.map((r) => r.map((v) => `"${v}"`).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "jobtrackr-applications.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    } finally {
+      setExporting(false);
     }
-
-    await supabase.from("applications").insert([
-      {
-        user_id: user.user.id,
-        company: newApp.company,
-        position: newApp.position,
-        applied_at: newApp.applied_at || new Date().toISOString().slice(0, 10),
-        status: newApp.status,
-        notes: newApp.notes,
-      },
-    ]);
-
-    setIsSaving(false);
-    setShowForm(false);
-    setNewApp({
-      company: "",
-      position: "",
-      applied_at: "",
-      status: "waiting",
-      notes: "",
-    });
-
-    // reload list
-    const { data: appsData } = await supabase
-      .from("applications")
-      .select("*")
-      .eq("user_id", user.user.id)
-      .order("applied_at", { ascending: false });
-    setApps((appsData || []) as ApplicationRecord[]);
   };
+
+  const toggleTheme = () => {
+    setTheme((p) => (p === "dark" ? "light" : "dark"));
+  };
+
+  // style base theme
+  const isDark = theme === "dark";
+  const bgPage = isDark ? "#020617" : "#e2e8f0";
+  const textColor = isDark ? "white" : "#0f172a";
+  const cardBg = isDark ? "rgba(15,23,42,.55)" : "rgba(255,255,255,.8)";
+  const borderColor = isDark ? "rgba(148,163,184,.18)" : "rgba(15,23,42,.12)";
 
   return (
-    <div style={pageWrap}>
+    <div style={{ minHeight: "100vh", background: bgPage, color: textColor, padding: "1.4rem" }}>
       {/* top bar */}
-      <div style={topBar}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: "1rem",
+          alignItems: "center",
+          marginBottom: "1.5rem",
+          flexWrap: "wrap",
+        }}
+      >
         <div>
-          <h1 style={title}>Hi, {email}</h1>
-          <p style={subtitle}>Pantau lamaran kamu di sini.</p>
+          <h1 style={{ fontSize: "1.9rem", fontWeight: 700 }}>Hi, {userEmail}</h1>
+          <p style={{ opacity: isDark ? 0.6 : 0.8 }}>Pantau lamaran kamu di sini.</p>
         </div>
-        <div style={{ display: "flex", gap: 12 }}>
-          <button onClick={onExport} style={exportBtn}>
-            Export (disabled)
+        <div style={{ display: "flex", gap: "0.6rem", flexWrap: "wrap" }}>
+          <button onClick={toggleTheme} style={btnGhost(isDark)}>
+            {isDark ? "Light" : "Dark"}
           </button>
-          <button onClick={() => setShowForm(true)} style={primaryBtn}>
+          <button onClick={exportExcel} style={btnGreen(isDark)} disabled={exporting}>
+            {exporting ? "Exporting..." : "Export to Excel"}
+          </button>
+          <button onClick={openCreate} style={btnPrimary(isDark)}>
             + Add Application
           </button>
-          <button onClick={onLogout} style={ghostBtn}>
+          <button onClick={logout} style={btnGhost(isDark)}>
             Logout
           </button>
         </div>
       </div>
 
-      {/* filters */}
-      <div style={filterBar}>
-        {["all", "waiting", "interview", "rejected", "hired"].map((f) => (
+      {/* analytics */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))",
+          gap: "1rem",
+          marginBottom: "1.5rem",
+        }}
+      >
+        <AnalyticCard
+          title="Total Applications"
+          value={analytics.total}
+          desc="semua lamaran kamu"
+          color={isDark ? "#38bdf8" : "#0f172a"}
+          isDark={isDark}
+        />
+        <AnalyticCard
+          title="Waiting"
+          value={analytics.waiting}
+          desc="menunggu jawaban"
+          color="#facc15"
+          isDark={isDark}
+        />
+        <AnalyticCard
+          title="Interview"
+          value={analytics.interview}
+          desc="siapkan dirimu"
+          color="#38bdf8"
+          isDark={isDark}
+        />
+        <AnalyticCard
+          title="Hired"
+          value={analytics.hired}
+          desc="selamat 🎉"
+          color="#22c55e"
+          isDark={isDark}
+        />
+      </div>
+
+      {/* filter */}
+      <div style={{ display: "flex", gap: "0.6rem", marginBottom: "1rem", flexWrap: "wrap" }}>
+        {["all", "waiting", "interview", "rejected", "hired"].map((st) => (
           <button
-            key={f}
-            onClick={() => setFilter(f as any)}
-            style={filter === f ? filterBtnActive : filterBtn}
+            key={st}
+            onClick={() => setActiveFilter(st as "all" | StatusType)}
+            style={st === activeFilter ? pillActive(isDark) : pill(isDark)}
           >
-            {f}
+            {st}
           </button>
         ))}
       </div>
 
-      {/* table */}
-      <div style={tableWrap}>
-        <table style={table}>
+      {/* table / cards */}
+      <div style={{ background: cardBg, border: `1px solid ${borderColor}`, borderRadius: "1.1rem", overflow: "hidden" }}>
+        {/* desktop table */}
+        <div className="desktop-table" style={{ display: "none", minHeight: "120px" }}>{/* will be overwritten by CSS below */}</div>
+
+        {/* table for desktop */}
+        <table style={tableStyle}>
           <thead>
             <tr>
-              <th style={thStyle}>Company</th>
-              <th style={thStyle}>Position</th>
-              <th style={thStyle}>Applied</th>
-              <th style={thStyle}>Status</th>
-              <th style={thStyle}>Notes</th>
+              <th style={th(isDark)}>Company</th>
+              <th style={th(isDark)}>Position</th>
+              <th style={th(isDark)}>Applied</th>
+              <th style={th(isDark)}>Status</th>
+              <th style={th(isDark)}>Notes</th>
+              <th style={th(isDark)}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {filteredApps.length === 0 ? (
               <tr>
-                <td colSpan={5} style={emptyTd}>
+                <td colSpan={6} style={{ padding: "1rem", textAlign: "center", opacity: 0.6 }}>
                   No applications.
                 </td>
               </tr>
             ) : (
-              filtered.map((app) => (
-                <tr key={app.id} style={trStyle}>
-                  <td style={tdStyle}>{app.company}</td>
-                  <td style={tdStyle}>{app.position}</td>
-                  <td style={tdStyle}>{app.applied_at}</td>
-                  <td style={tdStyle}>
-                    <span
-                      style={{ ...statusBadge, ...statusColor(app.status) }}
-                    >
-                      {app.status}
-                    </span>
+              filteredApps.map((app) => (
+                <tr key={app.id} style={tr(isDark)}>
+                  <td style={td(isDark)}>{app.company}</td>
+                  <td style={td(isDark)}>{app.position}</td>
+                  <td style={td(isDark)}>{app.applied_at}</td>
+                  <td style={td(isDark)}>
+                    <span style={badge(app.status)}>{app.status}</span>
                   </td>
-                  <td style={tdStyle}>{app.notes}</td>
+                  <td style={td(isDark)}>{app.notes}</td>
+                  <td style={td(isDark)}>
+                    <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap" }}>
+                      <button onClick={() => openEdit(app)} style={actionBtn(isDark)}>
+                        Edit
+                      </button>
+                      <button onClick={() => deleteApplication(app.id)} style={deleteBtn}>
+                        Delete
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
+
+        {/* mobile cards */}
+        <div className="mobile-list" style={mobileList}>
+          {filteredApps.length === 0 ? (
+            <div style={{ padding: "1rem", opacity: 0.6, textAlign: "center" }}>No applications.</div>
+          ) : (
+            filteredApps.map((app) => (
+              <div key={app.id} style={mobileCard(isDark)}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem" }}>
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{app.company}</div>
+                    <div style={{ opacity: 0.6 }}>{app.position}</div>
+                  </div>
+                  <span style={badge(app.status)}>{app.status}</span>
+                </div>
+                <div style={{ marginTop: "0.4rem", fontSize: "0.8rem", opacity: 0.6 }}>
+                  Applied: {app.applied_at}
+                </div>
+                {app.notes ? <div style={{ marginTop: "0.4rem" }}>{app.notes}</div> : null}
+                <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.6rem", flexWrap: "wrap" }}>
+                  <button onClick={() => openEdit(app)} style={actionBtn(isDark)}>
+                    Edit
+                  </button>
+                  <button onClick={() => deleteApplication(app.id)} style={deleteBtn}>
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
 
-      {/* modal add */}
-      {showForm && (
-        <div style={overlay}>
-          <div style={modal}>
-            <h2 style={{ marginBottom: 12, fontSize: 20, fontWeight: 700 }}>
-              Add New Application
+      {/* modal */}
+      {showForm ? (
+        <div style={overlayStyle}>
+          <div style={modalStyle(isDark)}>
+            <h2 style={{ marginBottom: "0.8rem", fontSize: "1.1rem", fontWeight: 600 }}>
+              {editingId ? "Edit Application" : "New Application"}
             </h2>
-
+            <p style={{ fontSize: "0.75rem", opacity: 0.5, marginBottom: "0.8rem" }}>
+              Isi data lamaran: nama perusahaan, posisi, tanggal apply, dan catatan. Status bisa kamu ganti lagi nanti.
+            </p>
             <input
-              name="company"
-              value={newApp.company}
-              onChange={handleChange}
+              value={form.company}
+              onChange={(e) => setForm((p) => ({ ...p, company: e.target.value }))}
               placeholder="Company"
-              style={input}
+              style={inputStyle(isDark)}
             />
             <input
-              name="position"
-              value={newApp.position}
-              onChange={handleChange}
+              value={form.position}
+              onChange={(e) => setForm((p) => ({ ...p, position: e.target.value }))}
               placeholder="Position"
-              style={input}
+              style={inputStyle(isDark)}
             />
             <input
               type="date"
-              name="applied_at"
-              value={newApp.applied_at}
-              onChange={handleChange}
-              style={input}
+              value={form.applied_at}
+              onChange={(e) => setForm((p) => ({ ...p, applied_at: e.target.value }))}
+              style={inputStyle(isDark)}
             />
             <select
-              name="status"
-              value={newApp.status}
-              onChange={handleChange}
-              style={input}
+              value={form.status}
+              onChange={(e) => setForm((p) => ({ ...p, status: e.target.value as StatusType }))}
+              style={inputStyle(isDark)}
             >
               <option value="waiting">waiting</option>
               <option value="interview">interview</option>
@@ -225,231 +393,232 @@ export default function DashboardScreen() {
               <option value="hired">hired</option>
             </select>
             <textarea
-              name="notes"
-              value={newApp.notes}
-              onChange={handleChange}
+              value={form.notes}
+              onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
               placeholder="Notes..."
-              style={{ ...input, height: 80, resize: "vertical" }}
+              style={{ ...inputStyle(isDark), minHeight: "76px", resize: "vertical" }}
             />
-
-            <div
-              style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10 }}
-            >
-              <button onClick={() => setShowForm(false)} style={ghostSmall}>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+              <button onClick={() => setShowForm(false)} style={btnGhost(isDark)}>
                 Cancel
               </button>
-              <button onClick={createApplication} style={primarySmall} disabled={isSaving}>
-                {isSaving ? "Saving..." : "Create"}
+              <button onClick={saveApplication} style={btnPrimary(isDark)}>
+                {editingId ? "Save" : "Create"}
               </button>
             </div>
           </div>
         </div>
-      )}
+      ) : null}
+
+      {/* simple mobile css */}
+      <style jsx>{`
+        @media (max-width: 768px) {
+          table {
+            display: none;
+          }
+          .mobile-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+          }
+        }
+        @media (min-width: 769px) {
+          .mobile-list {
+            display: none;
+          }
+        }
+      `}</style>
     </div>
   );
 }
 
-// ============================================================
-// styles (web3-ish, glossy)
-// ============================================================
+function AnalyticCard({
+  title,
+  value,
+  desc,
+  color,
+  isDark,
+}: {
+  title: string;
+  value: number;
+  desc: string;
+  color: string;
+  isDark: boolean;
+}) {
+  return (
+    <div
+      style={{
+        background: isDark
+          ? "radial-gradient(circle at top, rgba(15,23,42,.8) 0%, rgba(2,6,23,.3) 90%)"
+          : "white",
+        border: isDark ? "1px solid rgba(148,163,184,.22)" : "1px solid rgba(15,23,42,.06)",
+        borderRadius: "1rem",
+        padding: "1rem",
+        boxShadow: isDark ? "0 10px 30px rgba(15,23,42,.35)" : "0 6px 12px rgba(15,23,42,.08)",
+      }}
+    >
+      <div style={{ fontSize: "0.8rem", opacity: isDark ? 0.6 : 0.6 }}>{title}</div>
+      <div style={{ fontSize: "1.8rem", fontWeight: 700, color, marginTop: "0.3rem" }}>{value}</div>
+      <div style={{ fontSize: "0.7rem", marginTop: "0.3rem", opacity: isDark ? 0.5 : 0.7 }}>{desc}</div>
+    </div>
+  );
+}
 
-const pageWrap: CSSProperties = {
-  minHeight: "100vh",
-  background:
-    "radial-gradient(circle at top, #172554 0%, #020617 55%, #020617 100%)",
-  color: "white",
-  padding: "22px",
-};
-
-const topBar: CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  gap: 16,
-  alignItems: "center",
-  marginBottom: 22,
-};
-
-const title: CSSProperties = {
-  fontSize: 26,
-  fontWeight: 700,
-};
-
-const subtitle: CSSProperties = {
-  opacity: 0.6,
-};
-
-const filterBar: CSSProperties = {
-  display: "flex",
-  gap: 10,
-  marginBottom: 18,
-};
-
-const filterBtn: CSSProperties = {
-  background: "rgba(15,23,42,.25)",
-  border: "1px solid rgba(148,163,184,.2)",
-  borderRadius: 9999,
-  padding: "4px 14px",
-  cursor: "pointer",
-  textTransform: "capitalize",
-  backdropFilter: "blur(4px)",
-};
-
-const filterBtnActive: CSSProperties = {
-  ...filterBtn,
-  background: "rgba(59,130,246,.9)",
-  boxShadow: "0 0 18px rgba(59,130,246,.55)",
-};
-
-const tableWrap: CSSProperties = {
-  background: "rgba(2,6,23,.4)",
-  border: "1px solid rgba(148,163,184,.12)",
-  borderRadius: 14,
-  overflow: "hidden",
-  backdropFilter: "blur(6px)",
-  boxShadow: "0 10px 35px rgba(0,0,0,.25)",
-};
-
-const table: CSSProperties = {
+const tableStyle: CSSProperties = {
   width: "100%",
   borderCollapse: "collapse",
-  fontSize: 14,
+  minWidth: "700px",
 };
 
-const thStyle: CSSProperties = {
+const mobileList: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "0.75rem",
+  padding: "1rem",
+};
+
+const badge = (status: string): CSSProperties => {
+  const base: CSSProperties = {
+    display: "inline-block",
+    padding: "3px 10px",
+    borderRadius: 9999,
+    fontSize: "0.7rem",
+    textTransform: "capitalize",
+  };
+  switch (status) {
+    case "waiting":
+      return { ...base, background: "rgba(250,204,21,.12)", color: "#fde68a" };
+    case "interview":
+      return { ...base, background: "rgba(59,130,246,.12)", color: "#bfdbfe" };
+    case "rejected":
+      return { ...base, background: "rgba(248,113,113,.12)", color: "#fecaca" };
+    case "hired":
+      return { ...base, background: "rgba(34,197,94,.12)", color: "#bbf7d0" };
+    default:
+      return base;
+  }
+};
+
+const th = (dark: boolean): CSSProperties => ({
   textAlign: "left",
-  padding: "12px 16px",
-  background: "rgba(15,23,42,.55)",
-  borderBottom: "1px solid rgba(148,163,184,.14)",
-};
+  padding: "0.75rem 1rem",
+  borderBottom: dark ? "1px solid rgba(148,163,184,.15)" : "1px solid rgba(15,23,42,.1)",
+  fontSize: "0.75rem",
+});
 
-const tdStyle: CSSProperties = {
-  padding: "10px 16px",
-  borderBottom: "1px solid rgba(148,163,184,.03)",
-  verticalAlign: "top",
-};
+const td = (dark: boolean): CSSProperties => ({
+  padding: "0.75rem 1rem",
+  borderBottom: dark ? "1px solid rgba(148,163,184,.03)" : "1px solid rgba(15,23,42,.03)",
+  fontSize: "0.77rem",
+});
 
-const trStyle: CSSProperties = {
-  transition: "background .15s ease",
-};
+const tr = (dark: boolean): CSSProperties => ({
+  transition: "background .12s ease",
+});
 
-const emptyTd: CSSProperties = {
-  padding: "20px 16px",
-  textAlign: "center",
-  opacity: 0.6,
-};
-
-const primaryBtn: CSSProperties = {
-  background: "linear-gradient(135deg, #3b82f6 0%, #6366f1 40%, #a855f7 100%)",
+const btnPrimary = (dark: boolean): CSSProperties => ({
+  background: dark ? "linear-gradient(135deg, #3b82f6 0%, #6366f1 50%, #a855f7 100%)" : "#0f172a",
+  color: "white",
   border: "none",
-  borderRadius: 10,
-  padding: "8px 14px",
+  borderRadius: "0.6rem",
+  padding: "0.5rem 1rem",
   cursor: "pointer",
   fontWeight: 500,
-  boxShadow: "0 0 20px rgba(99,102,241,.35)",
-};
+  boxShadow: dark ? "0 0 18px rgba(99,102,241,.45)" : "none",
+});
 
-const exportBtn: CSSProperties = {
-  background: "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)",
+const btnGreen = (dark: boolean): CSSProperties => ({
+  background: dark ? "linear-gradient(135deg, #22c55e 0%, #16a34a 100%)" : "#16a34a",
+  color: "white",
   border: "none",
-  borderRadius: 10,
-  padding: "8px 14px",
+  borderRadius: "0.6rem",
+  padding: "0.5rem 1rem",
   cursor: "pointer",
   fontWeight: 500,
-  boxShadow: "0 0 18px rgba(34,197,94,.35)",
-};
+});
 
-const ghostBtn: CSSProperties = {
-  background: "rgba(15,23,42,.25)",
-  border: "1px solid rgba(148,163,184,.35)",
-  borderRadius: 10,
-  padding: "8px 14px",
+const btnGhost = (dark: boolean): CSSProperties => ({
+  background: dark ? "rgba(15,23,42,.2)" : "transparent",
+  border: dark ? "1px solid rgba(148,163,184,.25)" : "1px solid rgba(15,23,42,.12)",
+  borderRadius: "0.6rem",
+  padding: "0.5rem 1rem",
+  cursor: "pointer",
+});
+
+const pill = (dark: boolean): CSSProperties => ({
+  background: dark ? "rgba(15,23,42,.3)" : "rgba(255,255,255,.5)",
+  border: dark ? "1px solid rgba(148,163,184,.17)" : "1px solid rgba(15,23,42,.02)",
+  borderRadius: 9999,
+  padding: "0.25rem 0.85rem",
+  cursor: "pointer",
+  textTransform: "capitalize",
+});
+
+const pillActive = (dark: boolean): CSSProperties => ({
+  ...pill(dark),
+  background: dark ? "rgba(59,130,246,1)" : "#0f172a",
+  color: "white",
+  boxShadow: "0 0 14px rgba(59,130,246,.55)",
+});
+
+const actionBtn = (dark: boolean): CSSProperties => ({
+  background: dark ? "rgba(15,23,42,.5)" : "rgba(240,240,240,1)",
+  border: dark ? "1px solid rgba(148,163,184,.4)" : "1px solid rgba(15,23,42,.09)",
+  borderRadius: 6,
+  padding: "4px 8px",
+  fontSize: "0.7rem",
+  cursor: "pointer",
+});
+
+const deleteBtn: CSSProperties = {
+  background: "rgba(248,113,113,.15)",
+  border: "1px solid rgba(248,113,113,.35)",
+  color: "white",
+  borderRadius: 6,
+  padding: "4px 8px",
+  fontSize: "0.7rem",
   cursor: "pointer",
 };
 
-const overlay: CSSProperties = {
+const mobileCard = (dark: boolean): CSSProperties => ({
+  background: dark ? "rgba(15,23,42,.6)" : "white",
+  border: dark ? "1px solid rgba(148,163,184,.12)" : "1px solid rgba(15,23,42,.05)",
+  borderRadius: "1rem",
+  padding: "0.85rem",
+  boxShadow: dark ? "0 12px 25px rgba(15,23,42,.35)" : "0 6px 16px rgba(15,23,42,.1)",
+});
+
+const overlayStyle: CSSProperties = {
   position: "fixed",
   inset: 0,
-  background: "rgba(2,6,23,.55)",
-  backdropFilter: "blur(7px)",
+  background: "rgba(2,6,23,.5)",
+  backdropFilter: "blur(6px)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  padding: 16,
+  padding: "1rem",
   zIndex: 50,
 };
 
-const modal: CSSProperties = {
-  background:
-    "radial-gradient(circle at top, rgba(15,23,42,1) 0%, rgba(2,6,23,1) 80%)",
-  border: "1px solid rgba(148,163,184,.3)",
-  borderRadius: 14,
-  padding: 18,
+const modalStyle = (dark: boolean): CSSProperties => ({
+  background: dark
+    ? "radial-gradient(circle at top, rgba(15,23,42,1) 0%, rgba(2,6,23,1) 100%)"
+    : "white",
+  border: dark ? "1px solid rgba(148,163,184,.25)" : "1px solid rgba(15,23,42,.1)",
+  borderRadius: "1rem",
+  padding: "1rem",
   width: "100%",
-  maxWidth: 420,
-  boxShadow: "0 0 35px rgba(59,130,246,.35)",
-};
+  maxWidth: "420px",
+  boxShadow: dark ? "0 0 25px rgba(59,130,246,.35)" : "0 0 25px rgba(15,23,42,.12)",
+});
 
-const input: CSSProperties = {
+const inputStyle = (dark: boolean): CSSProperties => ({
   width: "100%",
-  background: "rgba(15,23,42,.45)",
-  border: "1px solid rgba(148,163,184,.25)",
-  borderRadius: 8,
-  padding: "8px 10px",
-  marginBottom: 10,
-  color: "white",
+  background: dark ? "rgba(15,23,42,.25)" : "rgba(226,232,240,1)",
+  border: dark ? "1px solid rgba(148,163,184,.28)" : "1px solid rgba(15,23,42,.08)",
+  borderRadius: "0.6rem",
+  padding: "0.45rem 0.6rem",
+  marginBottom: "0.6rem",
+  color: dark ? "white" : "#0f172a",
   outline: "none",
-};
-
-const ghostSmall: CSSProperties = {
-  background: "transparent",
-  border: "1px solid rgba(148,163,184,.35)",
-  borderRadius: 8,
-  padding: "6px 14px",
-  cursor: "pointer",
-  color: "white",
-};
-
-const primarySmall: CSSProperties = {
-  background: "linear-gradient(135deg, #3b82f6 0%, #6366f1 100%)",
-  border: "none",
-  borderRadius: 8,
-  padding: "6px 14px",
-  cursor: "pointer",
-  color: "white",
-  fontWeight: 500,
-};
-
-const statusBadge: CSSProperties = {
-  display: "inline-block",
-  padding: "3px 10px",
-  borderRadius: 999,
-  fontSize: 12,
-  textTransform: "capitalize",
-};
-
-function statusColor(status: string): CSSProperties {
-  switch (status) {
-    case "waiting":
-      return {
-        background: "rgba(234,179,8,.14)",
-        border: "1px solid rgba(234,179,8,.4)",
-      };
-    case "interview":
-      return {
-        background: "rgba(59,130,246,.14)",
-        border: "1px solid rgba(59,130,246,.4)",
-      };
-    case "rejected":
-      return {
-        background: "rgba(248,113,113,.14)",
-        border: "1px solid rgba(248,113,113,.4)",
-      };
-    case "hired":
-      return {
-        background: "rgba(34,197,94,.14)",
-        border: "1px solid rgba(34,197,94,.4)",
-      };
-    default:
-      return {};
-  }
-}
+});
