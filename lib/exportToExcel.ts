@@ -2,24 +2,21 @@ import * as XLSX from "xlsx";
 
 export type ApplicationRecord = {
   id: string;
-  user_id?: string | null;
+  user_id: string;
   company: string;
   position: string;
   applied_at: string;
   status: "waiting" | "interview" | "rejected" | "hired";
   notes?: string | null;
-  created_at?: string | null;
 };
 
-export function createApplicationsWorkbookBlob(
-  applications: ApplicationRecord[]
-): Blob {
-  const worksheetData = applications.map((application) => ({
-    Company: application.company,
-    Position: application.position,
-    AppliedAt: application.applied_at,
-    Status: application.status,
-    Notes: application.notes ?? ""
+export function createApplicationsWorkbookBlob(applications: ApplicationRecord[]): Blob {
+  const worksheetData = applications.map((app) => ({
+    Company: app.company,
+    Position: app.position,
+    AppliedAt: app.applied_at,
+    Status: app.status,
+    Notes: app.notes ?? ""
   }));
 
   const worksheet = XLSX.utils.json_to_sheet(worksheetData);
