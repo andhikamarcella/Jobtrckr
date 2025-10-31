@@ -223,34 +223,35 @@ export default function DashboardClient() {
   }, [applications]);
 
   const summaryCards = useMemo(
-    () => [
-      {
-        key: "total",
-        label: "Total Applications",
-        description: "Jumlah seluruh lamaran",
-        count: applications.length,
-      },
-      ...STATUS_DETAILS.map(({ value, label, description }) => ({
-        key: value,
-        label,
-        description,
-        count: countsByStatus[value],
-      })),
-    ],
+    () =>
+      [
+        {
+          key: "total",
+          label: "Total Applications",
+          description: "Jumlah seluruh lamaran",
+          count: applications.length,
+        },
+        ...STATUS_DETAILS.map(({ value, label, description }) => ({
+          key: value,
+          label,
+          description,
+          count: countsByStatus[value],
+        })),
+      ].filter((card) => card.count > 0 || card.key === "total"),
     [applications.length, countsByStatus]
   );
 
   const themeAwareCard = isDark
-    ? "bg-slate-900/55 border border-slate-700/50 text-slate-100 shadow-[0_25px_55px_rgba(2,6,23,0.55)]"
-    : "bg-white/95 border border-slate-200 text-slate-900 shadow-[0_24px_55px_rgba(15,23,42,0.18)]";
+    ? "bg-gradient-to-br from-slate-950 via-slate-900/80 to-slate-900/60 border border-slate-700/50 text-slate-100 shadow-[0_24px_55px_rgba(2,6,23,0.55)]"
+    : "bg-gradient-to-br from-white via-white/90 to-slate-100 border border-slate-200 text-slate-900 shadow-[0_24px_55px_rgba(15,23,42,0.18)]";
 
   const themeAwareSourceCard = isDark
-    ? "bg-slate-900/45 border border-slate-700/45 text-slate-100 shadow-[0_22px_45px_rgba(15,23,42,0.45)]"
-    : "bg-white/95 border border-slate-200 text-slate-900 shadow-[0_22px_45px_rgba(148,163,184,0.28)]";
+    ? "bg-gradient-to-br from-slate-950 via-slate-900/70 to-slate-900/55 border border-slate-700/45 text-slate-100 shadow-[0_22px_45px_rgba(15,23,42,0.45)]"
+    : "bg-gradient-to-br from-white via-white/95 to-slate-100 border border-slate-200 text-slate-900 shadow-[0_22px_45px_rgba(148,163,184,0.28)]";
 
   const ctaCardClass = isDark
     ? "bg-gradient-to-br from-slate-950 via-slate-900/80 to-slate-900/60 border border-slate-700/50 text-slate-100 shadow-[0_26px_55px_rgba(2,6,23,0.6)]"
-    : "bg-gradient-to-br from-white via-white/90 to-slate-100 border border-slate-200 text-slate-900 shadow-[0_26px_55px_rgba(148,163,184,0.35)]";
+    : "bg-gradient-to-br from-white via-white/95 to-slate-100 border border-slate-200 text-slate-900 shadow-[0_26px_55px_rgba(148,163,184,0.35)]";
 
   const inputClass = `${
     isDark
