@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import type { User } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabaseClient';
 import { ApplicationForm, type ApplicationPayload } from './components/ApplicationForm';
 import { ApplicationTable, type ApplicationRecord } from './components/ApplicationTable';
@@ -11,6 +13,7 @@ import { StatusFilter, type StatusFilterValue } from './components/StatusFilter'
 const dummyApplications: ApplicationRecord[] = [
   {
     id: 'dummy-1',
+    user_id: 'dummy-user',
     company: 'OpenAI',
     position: 'AI Researcher',
     applied_at: '2024-03-10',
@@ -19,6 +22,7 @@ const dummyApplications: ApplicationRecord[] = [
   },
   {
     id: 'dummy-2',
+    user_id: 'dummy-user',
     company: 'Google',
     position: 'Software Engineer',
     applied_at: '2024-02-22',
@@ -27,6 +31,7 @@ const dummyApplications: ApplicationRecord[] = [
   },
   {
     id: 'dummy-3',
+    user_id: 'dummy-user',
     company: 'Startup Lokal',
     position: 'Frontend Developer',
     applied_at: '2024-01-15',
@@ -35,6 +40,7 @@ const dummyApplications: ApplicationRecord[] = [
   },
   {
     id: 'dummy-4',
+    user_id: 'dummy-user',
     company: 'Remote Corp',
     position: 'Product Manager',
     applied_at: '2023-12-01',
@@ -43,21 +49,19 @@ const dummyApplications: ApplicationRecord[] = [
   }
 ];
 
-// Contoh query Supabase untuk filtering sisi server.
-async function fetchApplicationsByStatus(status: string) {
-  const { data, error } = await supabase
+// Contoh query Supabase untuk filtering berdasarkan status dan user aktif.
+async function fetchApplicationsByStatus(userId: string, status: string) {
+  const { data } = await supabase
     .from('applications')
     .select('*')
+    .eq('user_id', userId)
     .eq('status', status);
 
-  if (error) {
-    throw error;
-  }
-
-  return data as ApplicationRecord[];
+  return data as ApplicationRecord[] | null;
 }
 
 export default function DashboardPage() {
+  const router = useRouter();
   const [applications, setApplications] = useState<ApplicationRecord[]>([]);
   const [filteredApplications, setFilteredApplications] = useState<ApplicationRecord[]>([]);
   const [statusFilter, setStatusFilter] = useState<StatusFilterValue>('all');
@@ -67,14 +71,18 @@ export default function DashboardPage() {
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isUsingDummyData, setIsUsingDummyData] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   useEffect(() => {
-    const loadApplications = async () => {
+    let isMounted = true;
+
+    const loadApplications = async (user: User) => {
       setIsLoading(true);
       try {
         const { data, error } = await supabase
           .from('applications')
           .select('*')
+          .eq('user_id', user.id)
           .order('applied_at', { ascending: false });
 
         if (error) {
@@ -90,16 +98,60 @@ export default function DashboardPage() {
         }
       } catch (error) {
         console.error(error);
-        setFeedbackMessage('Gagal memuat data dari Supabase, menampilkan data dummy.');
+        setFeedbackMessage('Gagal memuat data dari Supabase, menampilkan data contoh.');
         setApplications(dummyApplications);
         setIsUsingDummyData(true);
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
-    loadApplications();
-  }, []);
+    const initialize = async () => {
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError) {
+        console.error(sessionError);
+        setFeedbackMessage('Tidak dapat memeriksa sesi login saat ini.');
+        setApplications(dummyApplications);
+        setIsUsingDummyData(true);
+        setIsLoading(false);
+        return;
+      }
+
+      const session = sessionData.session;
+      if (!session) {
+        router.replace('/');
+        return;
+      }
+
+      if (!isMounted) {
+        return;
+      }
+
+      setCurrentUser(session.user);
+      await loadApplications(session.user);
+    };
+
+    initialize();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) {
+        return;
+      }
+
+      if (event === 'SIGNED_OUT' || !session) {
+        setCurrentUser(null);
+        router.replace('/');
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      authListener.subscription.unsubscribe();
+    };
+  }, [router]);
 
   useEffect(() => {
     if (statusFilter === 'all') {
@@ -158,36 +210,41 @@ export default function DashboardPage() {
   };
 
   const createApplication = async (payload: ApplicationPayload) => {
-    if (isUsingDummyData) {
-      const newRecord: ApplicationRecord = {
-        ...payload,
-        id: `dummy-${Date.now()}`
-      };
-      upsertLocalApplication(newRecord);
-      setFeedbackMessage('Data disimpan secara lokal (dummy). Hubungkan ke Supabase untuk persistensi.');
-      closeForm();
+    if (!currentUser) {
+      setFeedbackMessage('Session tidak ditemukan. Silakan login ulang.');
       return;
     }
 
-    const { data, error } = await supabase
-      .from('applications')
-      .insert({
-        company: payload.company,
-        position: payload.position,
-        applied_at: payload.applied_at,
-        status: payload.status,
-        notes: payload.notes
-      })
-      .select()
-      .single();
+    try {
+      const { data, error } = await supabase
+        .from('applications')
+        .insert({
+          user_id: currentUser.id,
+          company: payload.company,
+          position: payload.position,
+          applied_at: payload.applied_at,
+          status: payload.status,
+          notes: payload.notes
+        })
+        .select()
+        .single();
 
-    if (error) {
-      throw error;
+      if (error) {
+        throw error;
+      }
+
+      const newRecord = data as ApplicationRecord;
+      setApplications((prev) => {
+        const base = isUsingDummyData ? [] : prev;
+        return [newRecord, ...base];
+      });
+      setIsUsingDummyData(false);
+      setFeedbackMessage('Lamaran berhasil ditambahkan.');
+      closeForm();
+    } catch (error) {
+      console.error(error);
+      setFeedbackMessage('Terjadi kesalahan saat menyimpan data.');
     }
-
-    upsertLocalApplication(data as ApplicationRecord);
-    setFeedbackMessage('Lamaran berhasil ditambahkan.');
-    closeForm();
   };
 
   const updateApplication = async (payload: ApplicationPayload) => {
@@ -195,43 +252,49 @@ export default function DashboardPage() {
 
     if (isUsingDummyData) {
       upsertLocalApplication(payload as ApplicationRecord);
-      setFeedbackMessage('Perubahan tersimpan pada data dummy.');
+      setFeedbackMessage('Perubahan tersimpan pada data contoh.');
       closeForm();
       return;
     }
 
-    const { data, error } = await supabase
-      .from('applications')
-      .update({
-        company: payload.company,
-        position: payload.position,
-        applied_at: payload.applied_at,
-        status: payload.status,
-        notes: payload.notes
-      })
-      .eq('id', payload.id)
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
+    if (!currentUser) {
+      setFeedbackMessage('Session tidak ditemukan. Silakan login ulang.');
+      return;
     }
 
-    upsertLocalApplication(data as ApplicationRecord);
-    setFeedbackMessage('Lamaran berhasil diperbarui.');
-    closeForm();
+    try {
+      const { data, error } = await supabase
+        .from('applications')
+        .update({
+          company: payload.company,
+          position: payload.position,
+          applied_at: payload.applied_at,
+          status: payload.status,
+          notes: payload.notes
+        })
+        .eq('id', payload.id)
+        .eq('user_id', currentUser.id)
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      upsertLocalApplication(data as ApplicationRecord);
+      setFeedbackMessage('Lamaran berhasil diperbarui.');
+      closeForm();
+    } catch (error) {
+      console.error(error);
+      setFeedbackMessage('Terjadi kesalahan saat memperbarui data.');
+    }
   };
 
   const handleSubmit = async (payload: ApplicationPayload) => {
-    try {
-      if (formMode === 'create') {
-        await createApplication(payload);
-      } else {
-        await updateApplication(payload);
-      }
-    } catch (error) {
-      console.error(error);
-      setFeedbackMessage('Terjadi kesalahan saat menyimpan data.');
+    if (formMode === 'create') {
+      await createApplication(payload);
+    } else {
+      await updateApplication(payload);
     }
   };
 
@@ -241,20 +304,45 @@ export default function DashboardPage() {
 
     if (isUsingDummyData) {
       setApplications((prev) => prev.filter((item) => item.id !== application.id));
-      setFeedbackMessage('Data dummy telah dihapus secara lokal.');
+      setFeedbackMessage('Data contoh telah dihapus secara lokal.');
       return;
     }
 
-    const { error } = await supabase.from('applications').delete().eq('id', application.id);
+    if (!currentUser) {
+      setFeedbackMessage('Session tidak ditemukan. Silakan login ulang.');
+      return;
+    }
 
-    if (error) {
+    try {
+      const { error } = await supabase
+        .from('applications')
+        .delete()
+        .eq('id', application.id)
+        .eq('user_id', currentUser.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setApplications((prev) => prev.filter((item) => item.id !== application.id));
+      setFeedbackMessage('Lamaran berhasil dihapus.');
+    } catch (error) {
       console.error(error);
       setFeedbackMessage('Gagal menghapus data.');
-      return;
     }
+  };
 
-    setApplications((prev) => prev.filter((item) => item.id !== application.id));
-    setFeedbackMessage('Lamaran berhasil dihapus.');
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+      router.replace('/');
+    } catch (error) {
+      console.error(error);
+      setFeedbackMessage('Gagal logout. Silakan coba lagi.');
+    }
   };
 
   return (
@@ -262,7 +350,9 @@ export default function DashboardPage() {
       <div className="mx-auto max-w-6xl px-4 py-10">
         <header className="mb-10 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-slate-800">JobTrackr Dashboard</h1>
+            <h1 className="text-3xl font-bold text-slate-800">
+              {currentUser ? `Hi, ${currentUser.email ?? 'there'}` : 'JobTrackr Dashboard'}
+            </h1>
             <p className="mt-1 text-sm text-slate-500">
               Pantau status lamaran kerja Anda dan kelola semuanya dalam satu tempat.
             </p>
@@ -280,6 +370,13 @@ export default function DashboardPage() {
               className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow transition-colors hover:bg-blue-700"
             >
               Add Application
+            </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="inline-flex items-center justify-center rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-slate-100"
+            >
+              Logout
             </button>
           </div>
         </header>

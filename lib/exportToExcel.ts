@@ -2,11 +2,13 @@ import * as XLSX from "xlsx";
 
 export type ApplicationRecord = {
   id: string;
+  user_id?: string | null;
   company: string;
   position: string;
   applied_at: string;
   status: "waiting" | "interview" | "rejected" | "hired";
   notes?: string | null;
+  created_at?: string | null;
 };
 
 export function createApplicationsWorkbookBlob(

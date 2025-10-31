@@ -4,6 +4,7 @@ import type { ApplicationPayload } from './ApplicationForm';
 
 export interface ApplicationRecord extends ApplicationPayload {
   id: string;
+  user_id?: string | null;
   created_at?: string | null;
 }
 
