@@ -1,5 +1,3 @@
-"use client";
-
 import DashboardScreen from "../../components/dashboard/DashboardScreen";
 
 export const revalidate = 0;

@@ -1,14 +1,7 @@
 "use client";
 
+import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import {
-  Box,
-  Button,
-  Flex,
-  Heading,
-  Text,
-  useToast
-} from "@chakra-ui/react";
 
 const FALLBACK_SITE = "https://jobtrckr.vercel.app";
 const LOCAL_REDIRECT = "http://localhost:3000/auth/callback";
@@ -33,9 +26,10 @@ function resolveRedirectUrl() {
 }
 
 export default function LoginPage() {
-  const toast = useToast();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleLogin = async () => {
+    setErrorMessage(null);
     const redirectTo = resolveRedirectUrl();
 
     const { error } = await supabase.auth.signInWithOAuth({
@@ -46,27 +40,58 @@ export default function LoginPage() {
     });
 
     if (error) {
-      toast({
-        title: "Login failed",
-        description: error.message,
-        status: "error"
-      });
+      setErrorMessage(error.message);
     }
   };
 
   return (
-    <Flex minH="100vh" bg="gray.900" align="center" justify="center" px={4}>
-      <Box bg="gray.800" p={8} rounded="lg" shadow="xl" w="full" maxW="md">
-        <Heading size="lg" color="white" mb={2}>
+    <div
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: "#0f172a",
+        padding: "16px"
+      }}
+    >
+      <div
+        style={{
+          background: "#111827",
+          padding: "32px",
+          borderRadius: "12px",
+          width: "100%",
+          maxWidth: "420px",
+          boxShadow: "0 20px 60px rgba(15, 23, 42, 0.45)",
+          border: "1px solid rgba(148, 163, 184, 0.15)"
+        }}
+      >
+        <h1 style={{ fontSize: "28px", fontWeight: 700, color: "white", marginBottom: "8px" }}>
           JobTrackr
-        </Heading>
-        <Text color="gray.300" mb={6}>
+        </h1>
+        <p style={{ color: "rgba(255,255,255,0.65)", marginBottom: "24px" }}>
           Sign in with Google to manage your job applications.
-        </Text>
-        <Button colorScheme="blue" w="full" size="md" onClick={handleLogin}>
+        </p>
+        <button
+          onClick={handleLogin}
+          style={{
+            width: "100%",
+            padding: "12px 16px",
+            borderRadius: "10px",
+            border: "none",
+            cursor: "pointer",
+            background: "#3b82f6",
+            color: "white",
+            fontWeight: 600,
+            fontSize: "16px"
+          }}
+        >
           Continue with Google
-        </Button>
-      </Box>
-    </Flex>
+        </button>
+        {errorMessage ? (
+          <p style={{ color: "#fca5a5", marginTop: "16px", fontSize: "14px" }}>{errorMessage}</p>
+        ) : null}
+      </div>
+    </div>
   );
 }

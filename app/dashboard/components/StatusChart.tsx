@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo } from "react";
-import { Box, Heading } from "@chakra-ui/react";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import type { ApplicationRecord } from "./ApplicationTable";
 
@@ -30,25 +29,27 @@ export function StatusChart({ applications }: StatusChartProps) {
   }, [applications]);
 
   return (
-    <Box borderWidth="1px" borderColor="gray.700" rounded="lg" bg="gray.800" p={6} shadow="lg">
-      <Heading size="md" color="gray.100">
-        Status Overview
-      </Heading>
-      <Box mt={6} h="260px">
+    <div
+      style={{
+        border: "1px solid rgba(148, 163, 184, 0.2)",
+        borderRadius: "14px",
+        background: "rgba(15, 23, 42, 0.55)",
+        padding: "24px",
+        color: "white"
+      }}
+    >
+      <h2 style={{ fontSize: "18px", fontWeight: 600, marginBottom: "16px" }}>Status Overview</h2>
+      <div style={{ width: "100%", height: "260px" }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData}>
-            <CartesianGrid stroke="#2d3748" strokeDasharray="3 3" />
+            <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
             <XAxis dataKey="name" stroke="#cbd5f5" tick={{ fill: "#cbd5f5", fontSize: 12 }} />
-            <YAxis
-              allowDecimals={false}
-              stroke="#cbd5f5"
-              tick={{ fill: "#cbd5f5", fontSize: 12 }}
-            />
+            <YAxis allowDecimals={false} stroke="#cbd5f5" tick={{ fill: "#cbd5f5", fontSize: 12 }} />
             <Tooltip cursor={{ fill: "rgba(59, 130, 246, 0.15)" }} />
-            <Bar dataKey="value" fill="#4299e1" radius={[6, 6, 0, 0]} />
+            <Bar dataKey="value" fill="#3b82f6" radius={[6, 6, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
-      </Box>
-    </Box>
+      </div>
+    </div>
   );
 }

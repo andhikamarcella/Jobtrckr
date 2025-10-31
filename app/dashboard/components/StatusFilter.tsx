@@ -1,7 +1,5 @@
 "use client";
 
-import { Button, Wrap, WrapItem } from "@chakra-ui/react";
-
 const STATUS_OPTIONS = ["all", "waiting", "interview", "rejected", "hired"] as const;
 
 export type StatusFilterValue = (typeof STATUS_OPTIONS)[number];
@@ -16,20 +14,25 @@ const getLabel = (status: StatusFilterValue) =>
 
 export function StatusFilter({ activeStatus, onChange }: StatusFilterProps) {
   return (
-    <Wrap spacing={2}>
+    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
       {STATUS_OPTIONS.map((status) => (
-        <WrapItem key={status}>
-          <Button
-            size="sm"
-            variant={activeStatus === status ? "solid" : "outline"}
-            colorScheme="blue"
-            onClick={() => onChange(status)}
-          >
-            {getLabel(status)}
-          </Button>
-        </WrapItem>
+        <button
+          key={status}
+          onClick={() => onChange(status)}
+          style={{
+            padding: "6px 14px",
+            borderRadius: "999px",
+            border: "1px solid rgba(148, 163, 184, 0.4)",
+            background: activeStatus === status ? "#3b82f6" : "transparent",
+            color: "white",
+            cursor: "pointer",
+            textTransform: "capitalize"
+          }}
+        >
+          {getLabel(status)}
+        </button>
       ))}
-    </Wrap>
+    </div>
   );
 }
 

@@ -1,17 +1,7 @@
 "use client";
 
+import type { ChangeEvent, CSSProperties, FormEvent } from "react";
 import { useEffect, useState } from "react";
-import {
-  Box,
-  Button,
-  ButtonGroup,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
-  Stack,
-  Textarea
-} from "@chakra-ui/react";
 import { STATUS_OPTIONS, type StatusFilterValue } from "./StatusFilter";
 
 const STATUS_SELECT_OPTIONS = STATUS_OPTIONS.filter((status) => status !== "all");
@@ -59,7 +49,7 @@ export function ApplicationForm({ mode, initialData, onSubmit, onCancel }: Appli
     }
   }, [initialData]);
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (event: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
     setFormState((prev) => ({
       ...prev,
@@ -67,7 +57,7 @@ export function ApplicationForm({ mode, initialData, onSubmit, onCancel }: Appli
     }));
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSubmitting(true);
     try {
@@ -78,54 +68,122 @@ export function ApplicationForm({ mode, initialData, onSubmit, onCancel }: Appli
   };
 
   return (
-    <Box as="form" onSubmit={handleSubmit}>
-      <Stack spacing={4}>
-        <FormControl isRequired>
-          <FormLabel htmlFor="company">Company</FormLabel>
-          <Input id="company" name="company" value={formState.company} onChange={handleChange} />
-        </FormControl>
+    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <label style={labelStyle}>
+        <span>Company</span>
+        <input
+          id="company"
+          name="company"
+          value={formState.company}
+          onChange={handleChange}
+          required
+          style={inputStyle}
+        />
+      </label>
 
-        <FormControl isRequired>
-          <FormLabel htmlFor="position">Position</FormLabel>
-          <Input id="position" name="position" value={formState.position} onChange={handleChange} />
-        </FormControl>
+      <label style={labelStyle}>
+        <span>Position</span>
+        <input
+          id="position"
+          name="position"
+          value={formState.position}
+          onChange={handleChange}
+          required
+          style={inputStyle}
+        />
+      </label>
 
-        <FormControl isRequired>
-          <FormLabel htmlFor="applied_at">Applied At</FormLabel>
-          <Input
-            type="date"
-            id="applied_at"
-            name="applied_at"
-            value={formState.applied_at}
-            onChange={handleChange}
-          />
-        </FormControl>
+      <label style={labelStyle}>
+        <span>Applied At</span>
+        <input
+          type="date"
+          id="applied_at"
+          name="applied_at"
+          value={formState.applied_at}
+          onChange={handleChange}
+          required
+          style={inputStyle}
+        />
+      </label>
 
-        <FormControl isRequired>
-          <FormLabel htmlFor="status">Status</FormLabel>
-          <Select id="status" name="status" value={formState.status} onChange={handleChange}>
-            {STATUS_SELECT_OPTIONS.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </Select>
-        </FormControl>
+      <label style={labelStyle}>
+        <span>Status</span>
+        <select
+          id="status"
+          name="status"
+          value={formState.status}
+          onChange={handleChange}
+          required
+          style={{ ...inputStyle, appearance: "none" }}
+        >
+          {STATUS_SELECT_OPTIONS.map((status) => (
+            <option key={status} value={status}>
+              {status}
+            </option>
+          ))}
+        </select>
+      </label>
 
-        <FormControl>
-          <FormLabel htmlFor="notes">Notes</FormLabel>
-          <Textarea id="notes" name="notes" value={formState.notes ?? ""} onChange={handleChange} rows={4} />
-        </FormControl>
+      <label style={labelStyle}>
+        <span>Notes</span>
+        <textarea
+          id="notes"
+          name="notes"
+          value={formState.notes ?? ""}
+          onChange={handleChange}
+          rows={4}
+          style={{ ...inputStyle, resize: "vertical" }}
+        />
+      </label>
 
-        <ButtonGroup justifyContent="flex-end" pt={2}>
-          <Button variant="outline" onClick={onCancel} isDisabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button colorScheme="blue" type="submit" isLoading={isSubmitting}>
-            {isEditMode ? "Update Application" : "Create Application"}
-          </Button>
-        </ButtonGroup>
-      </Stack>
-    </Box>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", paddingTop: "8px" }}>
+        <button
+          type="button"
+          onClick={onCancel}
+          disabled={isSubmitting}
+          style={outlineButtonStyle}
+        >
+          Cancel
+        </button>
+        <button type="submit" disabled={isSubmitting} style={primaryButtonStyle}>
+          {isEditMode ? "Update Application" : "Create Application"}
+        </button>
+      </div>
+    </form>
   );
 }
+
+const labelStyle: CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: "8px",
+  fontSize: "14px",
+  color: "rgba(255,255,255,0.8)"
+};
+
+const inputStyle: CSSProperties = {
+  padding: "10px 12px",
+  borderRadius: "10px",
+  border: "1px solid rgba(148, 163, 184, 0.3)",
+  background: "rgba(15, 23, 42, 0.6)",
+  color: "white"
+};
+
+const outlineButtonStyle: CSSProperties = {
+  padding: "10px 16px",
+  borderRadius: "10px",
+  border: "1px solid rgba(148, 163, 184, 0.4)",
+  background: "transparent",
+  color: "white",
+  cursor: "pointer"
+};
+
+const primaryButtonStyle: CSSProperties = {
+  padding: "10px 16px",
+  borderRadius: "10px",
+  border: "none",
+  background: "#3b82f6",
+  color: "white",
+  fontWeight: 600,
+  cursor: "pointer"
+};
