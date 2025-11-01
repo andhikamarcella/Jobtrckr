@@ -38,41 +38,48 @@ export interface ApplicationRecord {
 }
 
 export const STATUS_BADGE_STYLES: Record<ApplicationStatus, string> = {
-  waiting: "bg-amber-500/20 text-amber-200",
-  screening: "bg-sky-500/20 text-sky-200",
-  mcu: "bg-pink-500/20 text-pink-200",
-  "interview-user": "bg-blue-500/20 text-blue-200",
-  psikotes: "bg-purple-500/20 text-purple-200",
-  "tes-online": "bg-cyan-500/20 text-cyan-200",
-  training: "bg-lime-500/20 text-lime-200",
-  "tes-kesehatan": "bg-emerald-500/20 text-emerald-200",
-  offering: "bg-orange-500/20 text-orange-200",
-  rejected: "bg-rose-500/20 text-rose-200",
-  hired: "bg-emerald-500/25 text-emerald-100",
+  waiting: "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-200",
+  screening: "bg-sky-100 text-sky-800 dark:bg-sky-500/20 dark:text-sky-200",
+  mcu: "bg-pink-100 text-pink-800 dark:bg-pink-500/20 dark:text-pink-200",
+  "interview-user": "bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-200",
+  psikotes: "bg-purple-100 text-purple-800 dark:bg-purple-500/20 dark:text-purple-200",
+  "tes-online": "bg-cyan-100 text-cyan-800 dark:bg-cyan-500/20 dark:text-cyan-200",
+  training: "bg-lime-100 text-lime-800 dark:bg-lime-500/20 dark:text-lime-200",
+  "tes-kesehatan": "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-200",
+  offering: "bg-orange-100 text-orange-800 dark:bg-orange-500/20 dark:text-orange-200",
+  rejected: "bg-rose-100 text-rose-800 dark:bg-rose-500/20 dark:text-rose-200",
+  hired: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/25 dark:text-emerald-100",
 };
 
 export const STATUS_PILL_STYLES: Record<ApplicationStatus, string> = {
-  waiting: "bg-amber-100 text-amber-900",
-  screening: "bg-sky-100 text-sky-900",
-  mcu: "bg-pink-100 text-pink-900",
-  "interview-user": "bg-blue-100 text-blue-900",
-  psikotes: "bg-purple-100 text-purple-900",
-  "tes-online": "bg-cyan-100 text-cyan-900",
-  training: "bg-lime-100 text-lime-900",
-  "tes-kesehatan": "bg-emerald-100 text-emerald-900",
-  offering: "bg-orange-100 text-orange-900",
-  rejected: "bg-rose-100 text-rose-900",
-  hired: "bg-emerald-200 text-emerald-900",
+  waiting: "bg-amber-100 text-amber-800 dark:bg-amber-500/25 dark:text-amber-100",
+  screening: "bg-sky-100 text-sky-800 dark:bg-sky-500/25 dark:text-sky-100",
+  mcu: "bg-pink-100 text-pink-800 dark:bg-pink-500/25 dark:text-pink-100",
+  "interview-user": "bg-blue-100 text-blue-800 dark:bg-blue-500/25 dark:text-blue-100",
+  psikotes: "bg-purple-100 text-purple-800 dark:bg-purple-500/25 dark:text-purple-100",
+  "tes-online": "bg-cyan-100 text-cyan-800 dark:bg-cyan-500/25 dark:text-cyan-100",
+  training: "bg-lime-100 text-lime-800 dark:bg-lime-500/25 dark:text-lime-100",
+  "tes-kesehatan": "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/25 dark:text-emerald-100",
+  offering: "bg-orange-100 text-orange-800 dark:bg-orange-500/25 dark:text-orange-100",
+  rejected: "bg-rose-100 text-rose-800 dark:bg-rose-500/25 dark:text-rose-100",
+  hired: "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/25 dark:text-emerald-100",
 };
 
 export const SOURCE_CARD_GRADIENTS: Record<ApplicationSource, string> = {
-  linkedin: "from-sky-500/30 to-slate-900/40",
-  email: "from-emerald-500/30 to-slate-900/40",
-  website: "from-indigo-500/30 to-slate-900/40",
-  disnaker: "from-orange-500/30 to-slate-900/40",
-  instagram: "from-fuchsia-500/30 to-slate-900/40",
-  "teman-keluarga": "from-lime-500/30 to-slate-900/40",
-  lainnya: "from-slate-500/30 to-slate-900/40",
+  linkedin:
+    "from-sky-200/90 via-white/95 to-white/90 text-slate-800 dark:from-sky-500/25 dark:via-slate-900/30 dark:to-slate-950/70 dark:text-slate-50",
+  email:
+    "from-emerald-200/90 via-white/95 to-white/90 text-slate-800 dark:from-emerald-500/25 dark:via-slate-900/30 dark:to-slate-950/70 dark:text-slate-50",
+  website:
+    "from-indigo-200/90 via-white/95 to-white/90 text-slate-800 dark:from-indigo-500/25 dark:via-slate-900/30 dark:to-slate-950/70 dark:text-slate-50",
+  disnaker:
+    "from-orange-200/90 via-white/95 to-white/90 text-slate-800 dark:from-orange-500/25 dark:via-slate-900/30 dark:to-slate-950/70 dark:text-slate-50",
+  instagram:
+    "from-fuchsia-200/90 via-white/95 to-white/90 text-slate-800 dark:from-fuchsia-500/25 dark:via-slate-900/30 dark:to-slate-950/70 dark:text-slate-50",
+  "teman-keluarga":
+    "from-lime-200/90 via-white/95 to-white/90 text-slate-800 dark:from-lime-500/25 dark:via-slate-900/30 dark:to-slate-950/70 dark:text-slate-50",
+  lainnya:
+    "from-slate-200/90 via-white/95 to-white/90 text-slate-800 dark:from-slate-500/25 dark:via-slate-900/30 dark:to-slate-950/70 dark:text-slate-50",
 };
 
 export function normalizeStatus(value: string | null | undefined): ApplicationStatus {

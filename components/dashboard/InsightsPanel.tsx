@@ -44,16 +44,16 @@ export function InsightsPanel({ applications }: InsightsPanelProps) {
   const latest = applications[0];
 
   return (
-    <section className="rounded-3xl bg-gradient-to-br from-slate-900/70 via-slate-900/30 to-slate-950/70 p-6 shadow-[0_18px_45px_rgba(15,23,42,0.45)]">
-      <h2 className="text-lg font-semibold text-slate-100">Insight Hari Ini</h2>
-      <p className="mt-2 text-sm text-slate-300">{insight}</p>
+    <section className="rounded-3xl border border-slate-200/70 bg-white/95 p-6 shadow-lg shadow-slate-500/20 transition-colors duration-500 backdrop-blur-xl dark:border-white/10 dark:bg-gradient-to-br dark:from-slate-900/70 dark:via-slate-900/30 dark:to-slate-950/70 dark:shadow-[0_18px_45px_rgba(15,23,42,0.45)]">
+      <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Insight Hari Ini</h2>
+      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{insight}</p>
       {latest ? (
-        <div className="mt-4 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
-          <p className="text-xs uppercase tracking-wide text-slate-400">Terbaru</p>
-          <p className="mt-1 text-sm font-semibold text-slate-100">{latest.company}</p>
-          <p className="text-sm text-slate-300">{latest.position}</p>
-          <p className="mt-2 text-xs text-slate-400">
-            Status: <span className="font-semibold text-slate-200">{getStatusLabel(latest.status)}</span>
+        <div className="mt-4 rounded-2xl border border-slate-200/70 bg-white/90 p-4 shadow-sm dark:border-white/10 dark:bg-slate-950/50">
+          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Terbaru</p>
+          <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">{latest.company}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-300">{latest.position}</p>
+          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+            Status: <span className="font-semibold text-slate-800 dark:text-slate-200">{getStatusLabel(latest.status)}</span>
           </p>
         </div>
       ) : null}

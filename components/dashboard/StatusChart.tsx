@@ -42,15 +42,15 @@ export function StatusChart({ applications }: StatusChartProps) {
 
   if (!data.length) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-2 rounded-3xl border border-white/10 bg-slate-900/40 p-6 text-sm text-slate-300">
+      <div className="flex h-full flex-col items-center justify-center gap-2 rounded-3xl border border-slate-200/70 bg-white/95 p-6 text-sm text-slate-600 shadow-sm shadow-slate-500/10 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/40 dark:text-slate-300">
         Belum ada data untuk ditampilkan.
       </div>
     );
   }
 
   return (
-    <div className="h-72 rounded-3xl border border-white/10 bg-slate-900/40 p-4 backdrop-blur-xl">
-      <h3 className="text-sm font-semibold text-slate-100">Distribusi Status</h3>
+    <div className="h-72 rounded-3xl border border-slate-200/70 bg-white/95 p-4 shadow-sm shadow-slate-500/10 backdrop-blur-xl transition-colors duration-500 dark:border-white/10 dark:bg-slate-900/40">
+      <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-100">Distribusi Status</h3>
       <ResponsiveContainer width="100%" height="90%">
         <PieChart>
           <Pie dataKey="value" data={data} innerRadius={60} outerRadius={100} stroke="none" paddingAngle={2}>
@@ -62,8 +62,8 @@ export function StatusChart({ applications }: StatusChartProps) {
             contentStyle={{
               background: "rgba(15,23,42,0.9)",
               borderRadius: "14px",
-              border: "1px solid rgba(255,255,255,0.1)",
-              color: "#e2e8f0",
+              border: "1px solid rgba(148,163,184,0.2)",
+              color: "#f8fafc",
             }}
             formatter={(value: number, name: string) => [`${value} aplikasi`, name]}
           />
