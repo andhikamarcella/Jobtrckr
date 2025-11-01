@@ -10,10 +10,10 @@ export function SourceGrid({ counts }: SourceGridProps) {
       {SOURCE_OPTIONS.map((source) => (
         <article
           key={source.value}
-          className={`relative overflow-hidden rounded-3xl border border-slate-200/80 p-4 shadow-lg shadow-slate-500/15 backdrop-blur-xl transition dark:border-white/10 dark:shadow-[0_18px_45px_rgba(15,23,42,0.45)] ${SOURCE_CARD_GRADIENTS[source.value]}`}
+          className={`relative overflow-hidden rounded-3xl border border-slate-200/80 p-5 shadow-lg shadow-slate-400/15 backdrop-blur-xl transition-colors duration-500 dark:border-white/10 dark:shadow-[0_18px_45px_rgba(15,23,42,0.5)] ${SOURCE_CARD_GRADIENTS[source.value]}`}
         >
-          <div className="absolute -right-4 -top-4 h-16 w-16 rounded-full bg-white/20 blur-xl dark:bg-white/5" />
-          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-white/80">{source.label}</p>
+          <div className="absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/30 blur-3xl dark:bg-white/5" />
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-100">{source.label}</p>
           <p className="mt-3 text-3xl font-bold text-slate-900 dark:text-white">{counts[source.value] ?? 0}</p>
         </article>
       ))}

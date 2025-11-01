@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Pie, PieChart, ResponsiveContainer, Cell, Tooltip } from "recharts";
 import type { ApplicationRecord, ApplicationStatus } from "@/lib/applicationTypes";
 import { STATUS_OPTIONS } from "@/lib/applicationTypes";
@@ -24,6 +24,18 @@ interface StatusChartProps {
 }
 
 export function StatusChart({ applications }: StatusChartProps) {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const updateTheme = () => {
+      setIsDark(document.documentElement.classList.contains("dark"));
+    };
+    updateTheme();
+    const observer = new MutationObserver(updateTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
   const data = useMemo(() => {
     const counts: Record<ApplicationStatus, number> = Object.fromEntries(
       STATUS_OPTIONS.map((item) => [item.value, 0])
@@ -42,17 +54,17 @@ export function StatusChart({ applications }: StatusChartProps) {
 
   if (!data.length) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-2 rounded-3xl border border-slate-200/70 bg-white/95 p-6 text-sm text-slate-600 shadow-sm shadow-slate-500/10 backdrop-blur-xl dark:border-white/10 dark:bg-slate-900/40 dark:text-slate-300">
+      <div className="flex h-full flex-col items-center justify-center gap-2 rounded-3xl border border-slate-200/80 bg-white/95 p-6 text-sm text-slate-600 shadow-lg shadow-slate-500/10 backdrop-blur-xl transition-colors duration-500 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200">
         Belum ada data untuk ditampilkan.
       </div>
     );
   }
 
   return (
-    <div className="h-80 rounded-3xl border border-slate-200/80 bg-white/90 p-5 shadow-lg shadow-slate-500/15 backdrop-blur-xl transition-colors duration-500 dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_18px_45px_rgba(15,23,42,0.45)]">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-100">Distribusi Status</h3>
-        <span className="text-xs text-slate-500 dark:text-slate-300">{applications.length} aplikasi</span>
+    <div className="h-80 rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-lg shadow-slate-400/15 backdrop-blur-xl transition-colors duration-500 dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_18px_45px_rgba(15,23,42,0.55)]">
+      <div className="flex items-center justify-between text-slate-700 dark:text-slate-100">
+        <h3 className="text-sm font-semibold">Distribusi Status</h3>
+        <span className="text-xs opacity-80">{applications.length} aplikasi</span>
       </div>
       <ResponsiveContainer width="100%" height="70%">
         <PieChart>
@@ -63,10 +75,13 @@ export function StatusChart({ applications }: StatusChartProps) {
           </Pie>
           <Tooltip
             contentStyle={{
-              background: "rgba(15,23,42,0.9)",
-              borderRadius: "14px",
+              background: isDark ? "rgba(15,23,42,0.92)" : "rgba(255,255,255,0.95)",
+              borderRadius: "16px",
               border: "1px solid rgba(148,163,184,0.25)",
-              color: "#f8fafc",
+              color: isDark ? "#f8fafc" : "#0f172a",
+              boxShadow: isDark
+                ? "0 18px 35px rgba(15,23,42,0.55)"
+                : "0 15px 30px rgba(148,163,184,0.3)",
             }}
             formatter={(value: number, name: string) => [`${value} aplikasi`, name]}
           />
@@ -76,14 +91,14 @@ export function StatusChart({ applications }: StatusChartProps) {
         {data.map((item) => (
           <div
             key={item.status}
-            className="flex items-center gap-2 rounded-2xl border border-slate-200/70 bg-white/80 px-3 py-2 text-slate-700 shadow-sm transition-colors duration-500 dark:border-white/10 dark:bg-slate-950/40 dark:text-slate-200"
+            className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/95 px-3 py-2 text-slate-700 shadow-sm transition-colors duration-500 dark:border-white/10 dark:bg-slate-950/60 dark:text-slate-100"
           >
             <span
               className="h-2 w-2 rounded-full"
               style={{ backgroundColor: CHART_COLORS[item.status] }}
             />
-            <span className="truncate">{item.name}</span>
-            <span className="ml-auto font-semibold">{item.value}</span>
+            <span className="truncate font-medium">{item.name}</span>
+            <span className="ml-auto font-semibold text-slate-900 dark:text-slate-100">{item.value}</span>
           </div>
         ))}
       </div>

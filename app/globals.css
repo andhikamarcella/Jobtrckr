@@ -33,11 +33,11 @@ body {
 
 .btn-secondary {
   @apply inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-medium transition-transform duration-200 hover:-translate-y-0.5 active:scale-95;
-  @apply border-slate-300 text-slate-700 hover:bg-slate-200/70;
+  @apply border-slate-200 bg-white/90 text-slate-800 shadow-sm hover:bg-white/80;
 }
 
 .dark .btn-secondary {
-  @apply border-white/15 text-slate-100 hover:bg-white/10;
+  @apply border-white/15 bg-slate-900/60 text-slate-100 hover:bg-slate-900/80 shadow-[0_12px_30px_rgba(15,23,42,0.35)];
 }
 
 .badge {
