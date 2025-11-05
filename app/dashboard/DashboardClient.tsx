@@ -269,8 +269,8 @@ export default function DashboardClient() {
       </div>
 
       <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 pb-16 pt-10">
-        <header className="rounded-4xl border border-white/60 bg-white/90 p-6 shadow-xl shadow-slate-200/60 backdrop-blur-2xl">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <header className="y2k-card p-6">
+          <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
             <div className="space-y-3">
               <p className="text-sm font-medium text-slate-500">Selamat datang kembali,</p>
               <h1 className="text-3xl font-semibold text-slate-900">{ownerName}</h1>
@@ -318,13 +318,17 @@ export default function DashboardClient() {
               <InsightsPanel applications={applications} />
             </section>
 
-            <div className="grid gap-4 rounded-4xl border border-white/70 bg-white/85 p-6 shadow-lg shadow-slate-300/25 backdrop-blur-xl md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-              <DateRangePicker
-                startDate={dateRange.startDate}
-                endDate={dateRange.endDate}
-                onChange={setDateRange}
-              />
-              <FilterBar value={statusFilter} onChange={setStatusFilter} />
+            <div className="y2k-card grid gap-4 p-6 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+              <div className="relative z-10">
+                <DateRangePicker
+                  startDate={dateRange.startDate}
+                  endDate={dateRange.endDate}
+                  onChange={setDateRange}
+                />
+              </div>
+              <div className="relative z-10">
+                <FilterBar value={statusFilter} onChange={setStatusFilter} />
+              </div>
             </div>
 
             <ApplicationTable

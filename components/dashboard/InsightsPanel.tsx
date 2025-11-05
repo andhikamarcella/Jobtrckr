@@ -44,19 +44,21 @@ export function InsightsPanel({ applications }: InsightsPanelProps) {
   const latest = applications[0];
 
   return (
-    <section className="rounded-4xl border border-white/70 bg-white/88 p-6 shadow-lg shadow-slate-300/35 backdrop-blur-xl">
-      <h2 className="text-lg font-semibold text-slate-800">Insight Hari Ini</h2>
-      <p className="mt-2 text-sm text-slate-600">{insight}</p>
-      {latest ? (
-        <div className="mt-4 rounded-3xl border border-white/70 bg-white/95 p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Terbaru</p>
-          <p className="mt-1 text-sm font-semibold text-slate-800">{latest.company}</p>
-          <p className="text-sm text-slate-600">{latest.position}</p>
-          <p className="mt-2 text-xs text-slate-500">
-            Status: <span className="font-semibold text-slate-800">{getStatusLabel(latest.status)}</span>
-          </p>
-        </div>
-      ) : null}
+    <section className="y2k-card p-6">
+      <div className="relative z-10">
+        <h2 className="text-lg font-semibold text-slate-800">Insight Hari Ini</h2>
+        <p className="mt-2 text-sm text-slate-600">{insight}</p>
+        {latest ? (
+          <div className="mt-4 rounded-3xl border border-white/80 bg-white/95 p-4 shadow-[0_12px_28px_rgba(148,163,184,0.18)]">
+            <p className="text-[11px] uppercase tracking-[0.28em] text-slate-500">Terbaru</p>
+            <p className="mt-2 text-sm font-semibold text-slate-800">{latest.company}</p>
+            <p className="text-sm text-slate-600">{latest.position}</p>
+            <p className="mt-3 text-xs text-slate-500">
+              Status: <span className="font-semibold text-slate-800">{getStatusLabel(latest.status)}</span>
+            </p>
+          </div>
+        ) : null}
+      </div>
     </section>
   );
 }

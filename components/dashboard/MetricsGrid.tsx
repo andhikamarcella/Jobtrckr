@@ -19,23 +19,27 @@ export function MetricsGrid({ counts, total, hired }: MetricsGridProps) {
 
   return (
     <section className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,0.9fr)]">
-      <article className="relative overflow-hidden rounded-4xl border border-white/70 bg-gradient-to-br from-indigo-500 via-sky-500 to-emerald-400 p-8 text-white shadow-[0_25px_60px_rgba(59,130,246,0.35)] backdrop-blur-xl">
-        <div className="absolute right-6 top-6 h-20 w-20 rounded-full bg-white/20 blur-xl" />
-        <p className="text-sm font-medium uppercase tracking-wide text-white/80">Status unggulan</p>
-        <h2 className="mt-3 text-3xl font-semibold">{heroLabel}</h2>
-        <p className="mt-1 text-sm text-white/80">{heroCount} lamaran berada pada tahap ini.</p>
-        <div className="mt-8">
-          <ProgressBar total={total} hired={hired} />
+      <article className="y2k-card overflow-hidden bg-gradient-to-br from-sky-500 via-indigo-500 to-emerald-400 text-white shadow-[0_30px_70px_rgba(14,165,233,0.4)]">
+        <div className="relative z-10">
+          <div className="absolute right-6 top-6 h-24 w-24 rounded-full bg-white/25 blur-2xl" />
+          <p className="text-sm font-medium uppercase tracking-[0.35em] text-white/75">Status unggulan</p>
+          <h2 className="mt-4 text-3xl font-semibold drop-shadow-sm">{heroLabel}</h2>
+          <p className="mt-2 text-sm text-white/85">{heroCount} lamaran berada pada tahap ini.</p>
+          <div className="mt-8">
+            <ProgressBar total={total} hired={hired} />
+          </div>
         </div>
       </article>
 
-      <article className="rounded-4xl border border-white/70 bg-white/90 p-6 shadow-lg shadow-slate-200/40 backdrop-blur-xl">
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-600">Ringkasan Cepat</h3>
-        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-          <SummaryTile label="Total" value={total} accent="text-slate-900" />
-          <SummaryTile label="Hired" value={hired} accent="text-emerald-600" />
-          <SummaryTile label="Interview User" value={counts["interview-user"]} accent="text-sky-600" />
-          <SummaryTile label="Waiting" value={counts.waiting} accent="text-amber-600" />
+      <article className="y2k-card p-6">
+        <div className="relative z-10">
+          <h3 className="y2k-section-title text-slate-500">Ringkasan Cepat</h3>
+          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+            <SummaryTile label="Total" value={total} accent="text-slate-900" />
+            <SummaryTile label="Hired" value={hired} accent="text-emerald-600" />
+            <SummaryTile label="Interview User" value={counts["interview-user"]} accent="text-sky-600" />
+            <SummaryTile label="Waiting" value={counts.waiting} accent="text-amber-600" />
+          </div>
         </div>
       </article>
     </section>
@@ -52,9 +56,11 @@ function SummaryTile({
   accent: string;
 }) {
   return (
-    <div className="rounded-3xl border border-white/70 bg-white/95 p-4 text-center shadow-sm">
-      <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
-      <p className={`mt-2 text-2xl font-semibold ${accent}`}>{value}</p>
+    <div className="y2k-card px-4 py-5 text-center">
+      <div className="relative z-10">
+        <p className="text-[11px] uppercase tracking-[0.35em] text-slate-500">{label}</p>
+        <p className={`mt-3 text-2xl font-semibold ${accent}`}>{value}</p>
+      </div>
     </div>
   );
 }
