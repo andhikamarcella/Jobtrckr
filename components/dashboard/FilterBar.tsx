@@ -9,33 +9,71 @@ interface FilterBarProps {
 }
 
 export function FilterBar({ value, onChange }: FilterBarProps) {
+  const baseClasses =
+    "group relative inline-flex items-center gap-2 rounded-full border px-5 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent";
   return (
     <div className="flex w-full snap-x gap-2 overflow-x-auto pb-1">
-      <button
-        type="button"
+      <FilterButton
+        label="All"
+        active={value === "all"}
+        className={baseClasses}
         onClick={() => onChange("all")}
-        className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium capitalize transition ${
-          value === "all"
-            ? "border-sky-400 bg-gradient-to-r from-sky-500 to-emerald-400 text-slate-950 shadow-[0_18px_40px_rgba(14,165,233,0.35)]"
-            : "border-slate-300 bg-white/80 text-slate-700 hover:bg-slate-100 dark:border-white/10 dark:bg-slate-900/40 dark:text-slate-200 dark:hover:bg-slate-900/60"
-        }`}
-      >
-        All
-      </button>
+      />
       {STATUS_OPTIONS.map((option) => (
-        <button
+        <FilterButton
           key={option.value}
-          type="button"
+          label={option.label}
+          active={value === option.value}
+          className={baseClasses}
           onClick={() => onChange(option.value)}
-          className={`whitespace-nowrap rounded-full border px-4 py-2 text-sm font-medium capitalize transition ${
-            value === option.value
-              ? "border-indigo-400 bg-gradient-to-r from-indigo-500 via-sky-500 to-fuchsia-500 text-white shadow-[0_18px_45px_rgba(79,70,229,0.35)]"
-              : "border-slate-300 bg-white/80 text-slate-700 hover:bg-slate-100 dark:border-white/10 dark:bg-slate-900/40 dark:text-slate-200 dark:hover:bg-slate-900/60"
-          }`}
-        >
-          {option.label}
-        </button>
+        />
       ))}
     </div>
+  );
+}
+
+interface FilterButtonProps {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+  className: string;
+}
+
+function FilterButton({ label, active, onClick, className }: FilterButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`${className} ${
+        active
+          ? "border-transparent bg-gradient-to-r from-sky-500 via-cyan-400 to-emerald-400 text-slate-950 shadow-[0_18px_40px_rgba(56,189,248,0.4)]"
+          : "border-slate-300 bg-white text-slate-700 shadow-sm hover:-translate-y-[1px] hover:border-slate-400 dark:border-white/15 dark:bg-slate-900/60 dark:text-slate-100 dark:hover:border-slate-200/40 dark:hover:text-white"
+      }`}
+    >
+      <span
+        className={`flex h-6 w-6 items-center justify-center rounded-full border text-xs font-semibold ${
+          active
+            ? "border-slate-900/20 bg-white/70 text-slate-900"
+            : "border-slate-300 bg-white text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200"
+        }`}
+      >
+        {label.charAt(0)}
+      </span>
+      <span className="capitalize tracking-wide">{label}</span>
+      <svg
+        aria-hidden="true"
+        className={`h-4 w-4 transition-transform duration-300 ${active ? "translate-x-0 opacity-100" : "-translate-x-1 opacity-60"}`}
+        viewBox="0 0 20 20"
+        fill="none"
+      >
+        <path
+          d="M7 5l5 5-5 5"
+          stroke={active ? "#0f172a" : "currentColor"}
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </button>
   );
 }
