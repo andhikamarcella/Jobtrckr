@@ -12,9 +12,9 @@ export function ProgressBar({ total, hired }: ProgressBarProps) {
         <span>Progres menuju hired</span>
         <span>{percent}%</span>
       </div>
-      <div className="h-3 w-full rounded-full bg-white/30">
+      <div className="h-3 w-full rounded-full bg-white/40">
         <div
-          className="h-3 rounded-full bg-gradient-to-r from-white via-sky-100 to-emerald-200 transition-[width] duration-500 dark:from-sky-400 dark:via-indigo-400 dark:to-emerald-300"
+          className="h-3 rounded-full bg-gradient-to-r from-white via-sky-100 to-emerald-200 transition-[width] duration-500"
           style={{ width: `${percent}%` }}
         />
       </div>

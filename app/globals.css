@@ -2,25 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --bg-dark: #020617;
-  --bg-soft: rgba(2, 6, 23, 0.4);
-  --radius: 1.5rem;
-}
-
 body {
   background: radial-gradient(circle at 20% 20%, rgba(125, 211, 252, 0.35), transparent 45%),
     radial-gradient(circle at 80% 0%, rgba(167, 139, 250, 0.35), transparent 40%),
     linear-gradient(180deg, #f8fafc 0%, #eef2ff 35%, #e0f2fe 100%);
   @apply min-h-screen text-slate-900 antialiased transition-colors duration-500 ease-out;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-
-.dark body {
-  background: radial-gradient(circle at 10% 10%, rgba(56, 189, 248, 0.25), transparent 45%),
-    radial-gradient(circle at 80% 20%, rgba(192, 132, 252, 0.22), transparent 45%),
-    linear-gradient(180deg, #040712 0%, #050a1a 45%, #020617 100%);
-  @apply text-slate-100;
 }
 
 .glass-card {
@@ -34,10 +21,6 @@ body {
 .btn-secondary {
   @apply inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-medium transition-transform duration-200 hover:-translate-y-0.5 active:scale-95;
   @apply border-slate-200 bg-white/90 text-slate-800 shadow-sm hover:bg-white/80;
-}
-
-.dark .btn-secondary {
-  @apply border-white/15 bg-slate-900/60 text-slate-100 hover:bg-slate-900/80 shadow-[0_12px_30px_rgba(15,23,42,0.35)];
 }
 
 .badge {

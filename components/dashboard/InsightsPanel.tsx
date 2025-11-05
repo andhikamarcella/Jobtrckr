@@ -44,16 +44,16 @@ export function InsightsPanel({ applications }: InsightsPanelProps) {
   const latest = applications[0];
 
   return (
-    <section className="rounded-4xl border border-slate-200/80 bg-white/85 p-6 shadow-lg shadow-slate-500/15 backdrop-blur-xl transition-colors duration-500 dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_25px_60px_rgba(15,23,42,0.5)]">
-      <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100">Insight Hari Ini</h2>
-      <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{insight}</p>
+    <section className="rounded-4xl border border-white/70 bg-white/88 p-6 shadow-lg shadow-slate-300/35 backdrop-blur-xl">
+      <h2 className="text-lg font-semibold text-slate-800">Insight Hari Ini</h2>
+      <p className="mt-2 text-sm text-slate-600">{insight}</p>
       {latest ? (
-        <div className="mt-4 rounded-3xl border border-slate-200/80 bg-white/90 p-4 shadow-sm transition-colors duration-500 dark:border-white/10 dark:bg-slate-950/60">
-          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">Terbaru</p>
-          <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100">{latest.company}</p>
-          <p className="text-sm text-slate-600 dark:text-slate-300">{latest.position}</p>
-          <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-            Status: <span className="font-semibold text-slate-800 dark:text-slate-200">{getStatusLabel(latest.status)}</span>
+        <div className="mt-4 rounded-3xl border border-white/70 bg-white/95 p-4 shadow-sm">
+          <p className="text-xs uppercase tracking-wide text-slate-500">Terbaru</p>
+          <p className="mt-1 text-sm font-semibold text-slate-800">{latest.company}</p>
+          <p className="text-sm text-slate-600">{latest.position}</p>
+          <p className="mt-2 text-xs text-slate-500">
+            Status: <span className="font-semibold text-slate-800">{getStatusLabel(latest.status)}</span>
           </p>
         </div>
       ) : null}

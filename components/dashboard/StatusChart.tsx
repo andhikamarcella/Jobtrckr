@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo } from "react";
 import { Pie, PieChart, ResponsiveContainer, Cell, Tooltip } from "recharts";
 import type { ApplicationRecord, ApplicationStatus } from "@/lib/applicationTypes";
 import { STATUS_OPTIONS } from "@/lib/applicationTypes";
@@ -24,18 +24,6 @@ interface StatusChartProps {
 }
 
 export function StatusChart({ applications }: StatusChartProps) {
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    const updateTheme = () => {
-      setIsDark(document.documentElement.classList.contains("dark"));
-    };
-    updateTheme();
-    const observer = new MutationObserver(updateTheme);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
-    return () => observer.disconnect();
-  }, []);
-
   const data = useMemo(() => {
     const counts: Record<ApplicationStatus, number> = Object.fromEntries(
       STATUS_OPTIONS.map((item) => [item.value, 0])
@@ -54,15 +42,15 @@ export function StatusChart({ applications }: StatusChartProps) {
 
   if (!data.length) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-2 rounded-3xl border border-slate-200/70 bg-white/95 p-6 text-sm text-slate-600 shadow-lg shadow-slate-400/15 backdrop-blur-xl transition-colors duration-500 dark:border-white/10 dark:bg-slate-900/70 dark:text-slate-100">
+      <div className="flex h-full flex-col items-center justify-center gap-2 rounded-3xl border border-white/60 bg-white/90 p-6 text-sm text-slate-600 shadow-lg shadow-slate-300/30 backdrop-blur-xl">
         Belum ada data untuk ditampilkan.
       </div>
     );
   }
 
   return (
-    <div className="h-80 rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-lg shadow-slate-400/15 backdrop-blur-xl transition-colors duration-500 dark:border-white/10 dark:bg-slate-950/80 dark:shadow-[0_22px_55px_rgba(15,23,42,0.62)]">
-      <div className="flex items-center justify-between text-slate-700 dark:text-slate-100">
+    <div className="h-80 rounded-3xl border border-white/60 bg-white/90 p-5 shadow-lg shadow-slate-300/25 backdrop-blur-xl">
+      <div className="flex items-center justify-between text-slate-700">
         <h3 className="text-sm font-semibold">Distribusi Status</h3>
         <span className="text-xs opacity-80">{applications.length} aplikasi</span>
       </div>
@@ -75,13 +63,11 @@ export function StatusChart({ applications }: StatusChartProps) {
           </Pie>
           <Tooltip
             contentStyle={{
-              background: isDark ? "rgba(15,23,42,0.92)" : "rgba(255,255,255,0.95)",
+              background: "rgba(255,255,255,0.95)",
               borderRadius: "16px",
               border: "1px solid rgba(148,163,184,0.25)",
-              color: isDark ? "#f8fafc" : "#0f172a",
-              boxShadow: isDark
-                ? "0 18px 35px rgba(15,23,42,0.55)"
-                : "0 15px 30px rgba(148,163,184,0.3)",
+              color: "#0f172a",
+              boxShadow: "0 15px 30px rgba(148,163,184,0.3)",
             }}
             formatter={(value: number, name: string) => [`${value} aplikasi`, name]}
           />
@@ -91,14 +77,14 @@ export function StatusChart({ applications }: StatusChartProps) {
         {data.map((item) => (
           <div
             key={item.status}
-            className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-slate-50 to-slate-100 px-3 py-2 text-slate-700 shadow-sm transition-colors duration-500 dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-100 dark:shadow-[0_16px_32px_rgba(15,23,42,0.5)]"
+            className="flex items-center gap-2 rounded-2xl border border-white/70 bg-gradient-to-br from-white via-slate-50 to-slate-100 px-3 py-2 text-slate-700 shadow-sm"
           >
             <span
               className="h-2 w-2 rounded-full"
               style={{ backgroundColor: CHART_COLORS[item.status] }}
             />
-            <span className="truncate font-medium text-slate-600 dark:text-slate-100">{item.name}</span>
-            <span className="ml-auto font-semibold text-slate-900 dark:text-white">{item.value}</span>
+            <span className="truncate font-medium text-slate-600">{item.name}</span>
+            <span className="ml-auto font-semibold text-slate-900">{item.value}</span>
           </div>
         ))}
       </div>

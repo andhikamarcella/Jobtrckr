@@ -47,14 +47,14 @@ function FilterButton({ label, active, onClick, className }: FilterButtonProps) 
       className={`${className} ${
         active
           ? "border-transparent bg-gradient-to-r from-sky-500 via-cyan-400 to-emerald-400 text-slate-950 shadow-[0_18px_40px_rgba(56,189,248,0.4)]"
-          : "border-slate-300 bg-white text-slate-700 shadow-sm hover:-translate-y-[1px] hover:border-slate-400 dark:border-white/15 dark:bg-slate-900/60 dark:text-slate-100 dark:hover:border-slate-200/40 dark:hover:text-white"
+          : "border-slate-300 bg-white text-slate-700 shadow-sm hover:-translate-y-[1px] hover:border-slate-400"
       }`}
     >
       <span
         className={`flex h-6 w-6 items-center justify-center rounded-full border text-xs font-semibold ${
           active
             ? "border-slate-900/20 bg-white/70 text-slate-900"
-            : "border-slate-300 bg-white text-slate-600 dark:border-white/10 dark:bg-slate-900/60 dark:text-slate-200"
+            : "border-slate-300 bg-white text-slate-600"
         }`}
       >
         {label.charAt(0)}
