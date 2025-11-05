@@ -55,7 +55,7 @@ export function ApplicationFormModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-8 backdrop-blur-md">
-      <div className="w-full max-w-xl animate-[modal-pop_0.28s_ease-out] rounded-4xl border border-slate-200/70 bg-white/95 p-6 shadow-[0_32px_80px_rgba(15,23,42,0.28)] transition-colors duration-500 dark:border-white/10 dark:bg-slate-950/85 dark:shadow-[0_34px_90px_rgba(15,23,42,0.62)]">
+      <div className="w-full max-w-2xl animate-[modal-pop_0.28s_ease-out] rounded-4xl border border-slate-200/70 bg-white/95 p-6 shadow-[0_32px_80px_rgba(15,23,42,0.28)] transition-colors duration-500 dark:border-white/10 dark:bg-slate-950/85 dark:shadow-[0_34px_90px_rgba(15,23,42,0.62)]">
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
@@ -75,6 +75,21 @@ export function ApplicationFormModal({
           >
             Tutup
           </button>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
+          <div className="rounded-3xl bg-gradient-to-br from-sky-400/90 via-sky-500/80 to-emerald-400/80 px-4 py-3 text-sm text-white shadow-lg">
+            <p className="font-semibold">Tips Kilat</p>
+            <p className="text-xs opacity-80">Lengkapi semua bidang agar progresmu mudah dipantau.</p>
+          </div>
+          <div className="rounded-3xl border border-slate-200/70 bg-white/80 px-4 py-3 text-xs text-slate-600 shadow-sm transition-colors duration-500 dark:border-white/15 dark:bg-slate-900/70 dark:text-slate-200">
+            <p className="font-semibold text-sm">Shortcut</p>
+            <p>Tekan <span className="font-semibold">Ctrl + I</span> untuk membuka form.</p>
+          </div>
+          <div className="rounded-3xl border border-slate-200/70 bg-white/80 px-4 py-3 text-xs text-slate-600 shadow-sm transition-colors duration-500 dark:border-white/15 dark:bg-slate-900/70 dark:text-slate-200">
+            <p className="font-semibold text-sm">Status Terbaru</p>
+            <p>Pilih status yang paling menggambarkan progres terkini.</p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-5">

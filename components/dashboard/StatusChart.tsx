@@ -61,7 +61,7 @@ export function StatusChart({ applications }: StatusChartProps) {
   }
 
   return (
-    <div className="h-80 rounded-3xl border border-slate-200/70 bg-white/95 p-5 shadow-lg shadow-slate-400/15 backdrop-blur-xl transition-colors duration-500 dark:border-white/10 dark:bg-slate-900/70 dark:shadow-[0_18px_45px_rgba(15,23,42,0.55)]">
+    <div className="h-80 rounded-3xl border border-slate-200/80 bg-white/95 p-5 shadow-lg shadow-slate-400/15 backdrop-blur-xl transition-colors duration-500 dark:border-white/10 dark:bg-slate-950/75 dark:shadow-[0_22px_50px_rgba(15,23,42,0.58)]">
       <div className="flex items-center justify-between text-slate-700 dark:text-slate-100">
         <h3 className="text-sm font-semibold">Distribusi Status</h3>
         <span className="text-xs opacity-80">{applications.length} aplikasi</span>
@@ -91,14 +91,14 @@ export function StatusChart({ applications }: StatusChartProps) {
         {data.map((item) => (
           <div
             key={item.status}
-            className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-slate-50 to-slate-100 px-3 py-2 text-slate-700 shadow-sm transition-colors duration-500 dark:border-white/10 dark:bg-gradient-to-br dark:from-slate-900 dark:via-slate-950 dark:to-slate-900/90 dark:text-slate-100"
+            className="flex items-center gap-2 rounded-2xl border border-slate-200/80 bg-gradient-to-br from-white via-slate-50 to-slate-100 px-3 py-2 text-slate-700 shadow-sm transition-colors duration-500 dark:border-white/10 dark:bg-slate-900/85 dark:text-slate-100 dark:shadow-[0_14px_30px_rgba(15,23,42,0.45)]"
           >
             <span
               className="h-2 w-2 rounded-full"
               style={{ backgroundColor: CHART_COLORS[item.status] }}
             />
-            <span className="truncate font-medium text-slate-600 dark:text-slate-200">{item.name}</span>
-            <span className="ml-auto font-semibold text-slate-900 dark:text-slate-50">{item.value}</span>
+            <span className="truncate font-medium text-slate-600 dark:text-slate-50">{item.name}</span>
+            <span className="ml-auto font-semibold text-slate-900 dark:text-white">{item.value}</span>
           </div>
         ))}
       </div>
