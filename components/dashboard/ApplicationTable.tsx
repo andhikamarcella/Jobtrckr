@@ -22,7 +22,7 @@ export function ApplicationTable({ applications, onEdit, onDelete }: Application
           <p className="px-6 py-8 text-sm text-slate-500">Belum ada data lamaran.</p>
         ) : (
           <table className="w-full table-fixed border-collapse text-sm">
-            <thead className="bg-white/92 text-xs font-semibold uppercase tracking-[0.25em] text-slate-600">
+            <thead className="bg-slate-100 text-xs font-semibold uppercase tracking-[0.25em] text-slate-600">
               <tr className="text-left">
                 <th className="px-6 py-4">Company</th>
                 <th className="px-4 py-4">Position</th>
@@ -45,7 +45,7 @@ export function ApplicationTable({ applications, onEdit, onDelete }: Application
                   <td className="px-4 py-4 text-slate-700">{getSourceLabel(app.source)}</td>
                   <td className="px-4 py-4 text-slate-600">
                     {app.notes ? (
-                      <span className="inline-block max-w-xs rounded-2xl border border-white/80 bg-white/95 px-3 py-2 text-xs leading-relaxed text-slate-600 shadow-[0_12px_26px_rgba(148,163,184,0.18)]">
+                      <span className="inline-block max-w-xs rounded-2xl border border-slate-200 bg-white/95 px-3 py-2 text-xs leading-relaxed text-slate-600 shadow-[0_12px_26px_rgba(148,163,184,0.18)]">
                         {app.notes}
                       </span>
                     ) : (
@@ -98,7 +98,7 @@ export function ApplicationTable({ applications, onEdit, onDelete }: Application
                   </span>
                 </div>
                 {app.notes ? (
-                  <p className="mt-3 rounded-2xl border border-white/80 bg-white/95 p-3 text-xs text-slate-600 shadow-sm">
+                  <p className="mt-3 rounded-2xl border border-slate-200 bg-white/95 p-3 text-xs text-slate-600 shadow-sm">
                     {app.notes}
                   </p>
                 ) : null}

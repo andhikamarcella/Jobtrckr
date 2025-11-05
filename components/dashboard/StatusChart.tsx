@@ -79,7 +79,7 @@ export function StatusChart({ applications }: StatusChartProps) {
         {data.map((item) => (
           <div
             key={item.status}
-            className="flex items-center gap-2 rounded-2xl border border-white/80 bg-white/95 px-3 py-2 text-slate-700 shadow-[0_12px_26px_rgba(148,163,184,0.18)]"
+            className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-white/95 px-3 py-2 text-slate-700 shadow-[0_12px_26px_rgba(148,163,184,0.18)]"
           >
             <span
               className="h-2.5 w-2.5 rounded-full border border-white/80"

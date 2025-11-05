@@ -262,38 +262,35 @@ export default function DashboardClient() {
   };
 
   return (
-    <div className="relative isolate min-h-screen overflow-hidden bg-gradient-to-br from-sky-100 via-white to-emerald-100">
-      <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute -top-24 left-12 h-72 w-72 rounded-full bg-sky-300/40 blur-3xl" />
-        <div className="absolute -bottom-32 right-16 h-80 w-80 rounded-full bg-violet-300/35 blur-3xl" />
-      </div>
-
-      <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 pb-16 pt-10">
-        <header className="y2k-card p-6">
-          <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-slate-500">Selamat datang kembali,</p>
-              <h1 className="text-3xl font-semibold text-slate-900">{ownerName}</h1>
-              <p className="max-w-2xl text-sm text-slate-600">
-                Lacak progres setiap lamaran, simpan catatan penting, dan capai target kariermu dengan lebih teratur.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <ExportButton applications={filteredApplications} />
-              <button
-                type="button"
-                onClick={openCreateModal}
-                className="btn-primary"
-              >
-                New Application
-              </button>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="btn-secondary"
-              >
-                Logout
-              </button>
+    <div className="min-h-screen bg-gradient-to-b from-sky-100 via-white to-emerald-100">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 pb-16 pt-10">
+        <header className="rounded-[34px] bg-gradient-to-br from-sky-200 via-white to-emerald-100 p-[1px] shadow-[0_32px_70px_rgba(59,130,246,0.22)]">
+          <div className="rounded-[32px] bg-white/90 px-8 py-7">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-slate-500">Selamat datang kembali!</p>
+                <h1 className="text-3xl font-semibold text-slate-900">{ownerName}</h1>
+                <p className="max-w-2xl text-sm text-slate-600">
+                  Lacak progres setiap lamaran, simpan catatan penting, dan capai target kariermu dengan lebih teratur.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <ExportButton applications={filteredApplications} />
+                <button
+                  type="button"
+                  onClick={openCreateModal}
+                  className="btn-primary"
+                >
+                  New Application
+                </button>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="btn-secondary"
+                >
+                  Logout
+                </button>
+              </div>
             </div>
           </div>
         </header>

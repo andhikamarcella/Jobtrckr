@@ -14,7 +14,7 @@ export function SourceGrid({ counts }: SourceGridProps) {
             {SOURCE_OPTIONS.map((source) => (
               <article
                 key={source.value}
-                className={`relative min-w-[135px] overflow-hidden rounded-3xl border border-white/75 bg-white/92 px-3 py-4 text-slate-800 shadow-[0_16px_36px_rgba(148,163,184,0.28)] transition-transform duration-200 hover:-translate-y-1 ${SOURCE_CARD_GRADIENTS[source.value]}`}
+                className={`relative min-w-[135px] overflow-hidden rounded-3xl border border-slate-200 bg-white/90 px-3 py-4 text-slate-800 shadow-[0_16px_32px_rgba(148,163,184,0.22)] transition-transform duration-200 hover:-translate-y-1 ${SOURCE_CARD_GRADIENTS[source.value]}`}
               >
                 <div className="absolute -right-6 -top-6 h-16 w-16 rounded-full bg-white/40 blur-2xl" />
                 <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-slate-600">{source.label}</p>

@@ -9,22 +9,28 @@ interface MetricsGridProps {
 }
 
 export function MetricsGrid({ counts, total, hired }: MetricsGridProps) {
-  const heroStatus = (Object.keys(counts) as ApplicationStatus[]).reduce<ApplicationStatus | undefined>((prev, status) => {
-    if (counts[status] === 0) return prev;
-    if (!prev) return status;
-    return counts[status] > counts[prev] ? status : prev;
-  }, undefined);
-  const heroLabel = heroStatus ? getStatusLabel(heroStatus) : "Belum ada data";
-  const heroCount = heroStatus ? counts[heroStatus] : 0;
+  const leadingStatus = (Object.keys(counts) as ApplicationStatus[]).reduce<ApplicationStatus | null>(
+    (winner, status) => {
+      if (counts[status] === 0) return winner;
+      if (!winner) return status;
+      return counts[status] > counts[winner] ? status : winner;
+    },
+    null
+  );
 
   return (
-    <section className="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(0,0.9fr)]">
-      <article className="y2k-card overflow-hidden bg-gradient-to-br from-sky-500 via-indigo-500 to-emerald-400 text-white shadow-[0_30px_70px_rgba(14,165,233,0.4)]">
-        <div className="relative z-10">
-          <div className="absolute right-6 top-6 h-24 w-24 rounded-full bg-white/25 blur-2xl" />
-          <p className="text-sm font-medium uppercase tracking-[0.35em] text-white/75">Status unggulan</p>
-          <h2 className="mt-4 text-3xl font-semibold drop-shadow-sm">{heroLabel}</h2>
-          <p className="mt-2 text-sm text-white/85">{heroCount} lamaran berada pada tahap ini.</p>
+    <section className="grid gap-5 xl:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+      <article className="rounded-[28px] bg-gradient-to-br from-sky-200 via-cyan-100 to-emerald-200 p-[1px] shadow-[0_26px_60px_rgba(59,130,246,0.25)]">
+        <div className="rounded-[26px] bg-white/95 px-8 py-7">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-500">Status unggulan</p>
+          <h2 className="mt-3 text-3xl font-semibold text-slate-900">
+            {leadingStatus ? getStatusLabel(leadingStatus) : "Belum ada data"}
+          </h2>
+          <p className="mt-2 text-sm text-slate-600">
+            {leadingStatus
+              ? `${counts[leadingStatus]} lamaran berada pada tahap ini.`
+              : "Tambahkan lamaran pertama kamu untuk mulai memantau progres."}
+          </p>
           <div className="mt-8">
             <ProgressBar total={total} hired={hired} />
           </div>
@@ -32,21 +38,18 @@ export function MetricsGrid({ counts, total, hired }: MetricsGridProps) {
       </article>
 
       <article className="y2k-card p-6">
-        <div className="relative z-10">
-          <h3 className="y2k-section-title text-slate-500">Ringkasan Cepat</h3>
-          <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-            <SummaryTile label="Total" value={total} accent="text-slate-900" />
-            <SummaryTile label="Hired" value={hired} accent="text-emerald-600" />
-            <SummaryTile label="Interview User" value={counts["interview-user"]} accent="text-sky-600" />
-            <SummaryTile label="Waiting" value={counts.waiting} accent="text-amber-600" />
-          </div>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <SummaryStat label="Total" value={total} accent="text-slate-900" />
+          <SummaryStat label="Hired" value={hired} accent="text-emerald-600" />
+          <SummaryStat label="Interview User" value={counts["interview-user"]} accent="text-sky-600" />
+          <SummaryStat label="Waiting" value={counts.waiting} accent="text-amber-600" />
         </div>
       </article>
     </section>
   );
 }
 
-function SummaryTile({
+function SummaryStat({
   label,
   value,
   accent,
@@ -56,11 +59,9 @@ function SummaryTile({
   accent: string;
 }) {
   return (
-    <div className="y2k-card px-4 py-5 text-center">
-      <div className="relative z-10">
-        <p className="text-[11px] uppercase tracking-[0.35em] text-slate-500">{label}</p>
-        <p className={`mt-3 text-2xl font-semibold ${accent}`}>{value}</p>
-      </div>
+    <div className="min-w-[120px] flex-1 rounded-3xl border border-slate-200 bg-white/90 px-5 py-4 text-center shadow-[0_18px_32px_rgba(148,163,184,0.18)]">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-slate-500">{label}</p>
+      <p className={`mt-3 text-2xl font-semibold ${accent}`}>{value}</p>
     </div>
   );
 }

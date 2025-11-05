@@ -49,7 +49,7 @@ export function InsightsPanel({ applications }: InsightsPanelProps) {
         <h2 className="text-lg font-semibold text-slate-800">Insight Hari Ini</h2>
         <p className="mt-2 text-sm text-slate-600">{insight}</p>
         {latest ? (
-          <div className="mt-4 rounded-3xl border border-white/80 bg-white/95 p-4 shadow-[0_12px_28px_rgba(148,163,184,0.18)]">
+          <div className="mt-4 rounded-3xl border border-slate-200 bg-white/95 p-4 shadow-[0_12px_28px_rgba(148,163,184,0.18)]">
             <p className="text-[11px] uppercase tracking-[0.28em] text-slate-500">Terbaru</p>
             <p className="mt-2 text-sm font-semibold text-slate-800">{latest.company}</p>
             <p className="text-sm text-slate-600">{latest.position}</p>

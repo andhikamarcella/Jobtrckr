@@ -8,13 +8,13 @@ export function ProgressBar({ total, hired }: ProgressBarProps) {
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between text-xs text-white/80">
+      <div className="flex items-center justify-between text-xs text-slate-600">
         <span>Progres menuju hired</span>
         <span>{percent}%</span>
       </div>
-      <div className="h-3 w-full rounded-full bg-white/40">
+      <div className="h-3 w-full rounded-full bg-slate-200/70">
         <div
-          className="h-3 rounded-full bg-gradient-to-r from-white via-sky-100 to-emerald-200 transition-[width] duration-500"
+          className="h-3 rounded-full bg-gradient-to-r from-sky-400 via-cyan-400 to-emerald-400 transition-[width] duration-500"
           style={{ width: `${percent}%` }}
         />
       </div>

@@ -46,15 +46,15 @@ function FilterButton({ label, active, onClick, className }: FilterButtonProps) 
       onClick={onClick}
       className={`${className} ${
         active
-          ? "y2k-pill border-transparent bg-gradient-to-r from-sky-500 via-cyan-400 to-emerald-400 text-slate-950 shadow-[0_20px_50px_rgba(56,189,248,0.45)]"
-          : "y2k-pill border-white/70 bg-white/95 text-slate-700 shadow-[0_14px_26px_rgba(148,163,184,0.2)] hover:-translate-y-0.5"
+          ? "y2k-pill border-transparent bg-gradient-to-r from-sky-500 via-cyan-400 to-emerald-400 text-white shadow-[0_20px_50px_rgba(56,189,248,0.45)]"
+          : "y2k-pill border-slate-200 bg-white/95 text-slate-700 shadow-[0_14px_26px_rgba(148,163,184,0.2)] hover:-translate-y-0.5"
       }`}
     >
       <span
         className={`flex h-6 w-6 items-center justify-center rounded-full border text-xs font-semibold ${
           active
-            ? "border-slate-900/10 bg-white/90 text-slate-900"
-            : "border-white/80 bg-white/95 text-slate-500"
+            ? "border-white/80 bg-white/95 text-slate-900"
+            : "border-slate-200 bg-white text-slate-500"
         }`}
       >
         {label.charAt(0)}
