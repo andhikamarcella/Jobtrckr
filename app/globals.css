@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --glass-border: rgba(148, 163, 184, 0.28);
+  --glass-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+  --glass-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(240, 249, 255, 0.92) 50%, rgba(236, 254, 255, 0.96) 100%);
+}
+
+body {
+  background: linear-gradient(180deg, #eff6ff 0%, #f5fbff 35%, #ecfdf5 100%);
+  background-attachment: fixed;
+  @apply min-h-screen text-slate-900 antialiased;
+  font-family: "Inter", "SF Pro Display", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.y2k-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.75rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  backdrop-filter: blur(18px);
+}
+
+.y2k-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.14), rgba(236, 72, 153, 0.08), rgba(16, 185, 129, 0.12));
+  opacity: 0.3;
+}
+
+.y2k-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.y2k-section-title {
+  @apply text-[11px] font-semibold uppercase tracking-[0.35em] text-slate-500;
+}
+
+.y2k-pill {
+  @apply inline-flex items-center gap-3 rounded-full border border-slate-200 bg-white/90 px-5 py-2 text-sm font-semibold text-slate-700 shadow-[0_12px_28px_rgba(148,163,184,0.25)] transition hover:-translate-y-0.5;
+}
+
+.btn-primary {
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-sky-500 via-cyan-400 to-emerald-400 px-5 py-2 text-sm font-semibold text-white shadow-[0_18px_36px_rgba(14,165,233,0.35)] transition hover:-translate-y-0.5 hover:brightness-110;
+}
+
+.btn-secondary {
+  @apply inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white/90 px-5 py-2 text-sm font-medium text-slate-600 shadow-[0_14px_30px_rgba(148,163,184,0.22)] transition hover:-translate-y-0.5;
+}
+
+.badge {
+  @apply inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide;
+}
+
+@keyframes modal-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-modal-pop {
+  animation: modal-pop 0.3s ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-modal-pop {
+    animation: none;
+  }
+}
